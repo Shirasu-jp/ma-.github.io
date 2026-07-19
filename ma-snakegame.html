@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スネークﾏｰ (Snake-Mar)</title>
+    <style>
+        body {
+            text-align: center;
+            background-color: #222;
+            font-family: sans-serif;
+            color: #fff;
+            margin-top: 30px;
+            user-select: none;
+        }
+        h2 {
+            color: #5ddcff;
+            margin-bottom: 10px;
+        }
+        #scoreContainer {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        #score {
+            color: #ffd700;
+        }
+        canvas {
+            background-color: #111;
+            border: 4px solid #555;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        }
+        #restartBtn {
+            display: none;
+            margin: 15px auto;
+            padding: 10px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #1e90ff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        /* 十字キー */
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 8px;
+            justify-content: center;
+            margin: 20px auto;
+        }
+        .dpad button {
+            width: 60px;
+            height: 60px;
+            font-size: 22px;
+            font-weight: bold;
+            background-color: #333;
+            color: #5ddcff;
+            border: 2px solid #555;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+        .dpad button:active {
+            background-color: #444;
+        }
+        .dpad .empty {
+            pointer-events: none;
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>スネークﾏｰ</h2>
+    <div id="scoreContainer">SCORE: <span id="score">0</span></div>
+
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <div>
+        <button id="restartBtn" onclick="resetGame()">もう一度挑戦する (´ω`)</button>
+    </div>
+
+    <!-- スマホ用コントローラー -->
+    <div class="dpad">
+        <div class="empty"></div>
+        <button onmousedown="changeDirection(0,-1)" ontouchstart="changeDirection(0,-1)">↑</button>
+        <div class="empty"></div>
+        <button onmousedown="changeDirection(-1,0)" ontouchstart="changeDirection(-1,0)">←</button>
+        <div class="empty"></div>
+        <button onmousedown="changeDirection(1,0)" ontouchstart="changeDirection(1,0)">→</button>
+        <div class="empty"></div>
+        <button onmousedown="changeDirection(0,1)" ontouchstart="changeDirection(0,1)">↓</button>
+        <div class="empty"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const restartBtn = document.getElementById("restartBtn");
+
+        const tileSize = 40; // 1マスのサイズ (40x40ピクセル)
+        const gridCount = 10; // 10x10の盤面
+
+        let snake = [];
+        let food = { x: 0, y: 0 };
+        let dx = 1; // 横方向の移動量 (1:右, -1:左)
+        let dy = 0; // 縦方向の移動量 (1:下, -1:上)
+        let currentDx = 1; // 連打バグ防止用の現在方向保持
+        let currentDy = 0;
+        
+        let score = 0;
+        let gameState = "PLAY"; // "PLAY" または "GAMEOVER"
+        
+        let lastUpdateTime = 0;
+        let gameSpeed = 250; // 更新間隔 (ミリ秒) - 低いほど速い
+
+        // エサのランダム配置
+        function reparentFood() {
+            while (true) {
+                food.x = Math.floor(Math.random() * gridCount);
+                food.y = Math.floor(Math.random() * gridCount);
+                
+                // スネークの体と被っていないかチェック
+                let onSnake = snake.some(part => part.x === food.x && part.y === food.y);
+                if (!onSnake) break;
+            }
+        }
+
+        function resetGame() {
+            // 初期状態（最初は3マス分の長さ）
+            snake = [
+                { x: 4, y: 5 }, // 頭 (´ω`)
+                { x: 3, y: 5 }, // 胴 (ﾏ)
+                { x: 2, y: 5 }  // 胴 (ｰ)
+            ];
+            dx = 1;
+            dy = 0;
+            currentDx = 1;
+            currentDy = 0;
+            score = 0;
+            gameSpeed = 250;
+            gameState = "PLAY";
+            restartBtn.style.display = "none";
+            document.getElementById("score").innerText = score;
+            
+            reparentFood();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 方向転換（真逆への反転は禁止）
+        function changeDirection(newDx, newDy) {
+            if (newDx === -currentDx && currentDx !== 0) return;
+            if (newDy === -currentDy && currentDy !== 0) return;
+            dx = newDx;
+            dy = newDy;
+        }
+
+        // キーボード入力
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "ArrowUp" || e.code === "KeyW") changeDirection(0, -1);
+            if (e.code === "ArrowDown" || e.code === "KeyS") changeDirection(0, 1);
+            if (e.code === "ArrowLeft" || e.code === "KeyA") changeDirection(-1, 0);
+            if (e.code === "ArrowRight" || e.code === "KeyD") changeDirection(1, 0);
+
+            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code)) {
+                e.preventDefault(); // 画面スクロール防止
+            }
+        });
+
+        function update() {
+            if (gameState !== "PLAY") return;
+
+            // 現在の進行方向を確定
+            currentDx = dx;
+            currentDy = dy;
+
+            // 新しい頭の位置を計算
+            const head = { x: snake[0].x + currentDx, y: snake[0].y + currentDy };
+
+            // 壁衝突判定
+            if (head.x < 0 || head.x >= gridCount || head.y < 0 || head.y >= gridCount) {
+                gameState = "GAMEOVER";
+                restartBtn.style.display = "block";
+                return;
+            }
+
+            // 自己衝突判定（自分の体に噛みついたか）
+            let selfBite = snake.some(part => part.x === head.x && part.y === head.y);
+            if (selfBite) {
+                gameState = "GAMEOVER";
+                restartBtn.style.display = "block";
+                return;
+            }
+
+            // 頭を追加
+            snake.unshift(head);
+
+            // エサを食べたか判定
+            if (head.x === food.x && head.y === food.y) {
+                score += 100;
+                document.getElementById("score").innerText = score;
+                // ほんの少しずつ速度アップ（限界値100ms）
+                if (gameSpeed > 100) gameSpeed -= 5;
+                reparentFood();
+            } else {
+                // エサを食べていなければ、尻尾を1つ消して前進を表現
+                snake.pop();
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // うっすらとグリッド線を描画（目安用）
+            ctx.strokeStyle = "#1a1a1a";
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= gridCount; i++) {
+                ctx.beginPath(); ctx.moveTo(i * tileSize, 0); ctx.lineTo(i * tileSize, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i * tileSize); ctx.lineTo(canvas.width, i * tileSize); ctx.stroke();
+            }
+
+            // エサ（ポテト）の描画
+            ctx.font = "28px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🍟", food.x * tileSize + tileSize / 2, food.y * tileSize + tileSize / 2);
+
+            // スネーク（(´ω`)ﾏｰ）の描画
+            snake.forEach((part, index) => {
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
+                if (index === 0) {
+                    // 頭
+                    ctx.fillStyle = "#5ddcff";
+                    ctx.font = "bold 15px sans-serif";
+                    ctx.fillText("(´ω`)", part.x * tileSize + tileSize / 2, part.y * tileSize + tileSize / 2);
+                } else {
+                    // 胴体（奇数番目は「ﾏ」、偶数番目は「ｰ」）
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "bold 20px sans-serif";
+                    let bodyText = (index % 2 === 1) ? "ﾏ" : "ｰ";
+                    ctx.fillText(bodyText, part.x * tileSize + tileSize / 2, part.y * tileSize + tileSize / 2);
+                }
+            });
+
+            // ゲームオーバー画面
+            if (gameState === "GAMEOVER") {
+                ctx.fillStyle = "rgba(0,0,0,0.8)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = "#ff6347";
+                ctx.font = "bold 36px sans-serif";
+                ctx.fillText("自己衝突だﾏｰ!", canvas.width / 2, canvas.height / 2 - 20);
+                
+                ctx.fillStyle = "#fff";
+                ctx.font = "16px sans-serif";
+                ctx.fillText("壁か自分の体にぶつかりました", canvas.width / 2, canvas.height / 2 + 25);
+            }
+        }
+
+        // 時間ベースの一定間隔ループ処理
+        function gameLoop(timestamp) {
+            if (!lastUpdateTime) lastUpdateTime = timestamp;
+            const elapsed = timestamp - lastUpdateTime;
+
+            if (elapsed >= gameSpeed) {
+                update();
+                lastUpdateTime = timestamp;
+            }
+            
+            draw();
+
+            if (gameState === "PLAY") {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // スタート
+        resetGame();
+    </script>
+</body>
+</html>
