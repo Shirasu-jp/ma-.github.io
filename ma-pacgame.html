@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パックﾏｰ (Pac-Mar)</title>
+    <style>
+        body {
+            text-align: center;
+            background-color: #111;
+            font-family: 'Courier New', Courier, monospace, sans-serif;
+            color: #fff;
+            margin-top: 20px;
+            user-select: none;
+        }
+        h2 {
+            margin-bottom: 5px;
+            color: #ffde00;
+            text-shadow: 0 0 10px rgba(255, 222, 0, 0.5);
+        }
+        .ui-container {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #bbb;
+        }
+        #score, #dots {
+            color: #fff;
+            font-size: 20px;
+        }
+        canvas {
+            background-color: #000;
+            border: 4px solid #0000ff;
+            border-radius: 10px;
+            box-shadow: 0 0 25px rgba(0, 0, 255, 0.4);
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
+        /* リスタートボタン */
+        #restartBtn {
+            display: none;
+            margin: 15px auto;
+            padding: 10px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #ff6347;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+        }
+        /* スマホ用十字キー */
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 8px;
+            justify-content: center;
+            margin: 15px auto;
+        }
+        .dpad button {
+            width: 60px;
+            height: 60px;
+            font-size: 22px;
+            font-weight: bold;
+            background-color: #222;
+            color: #ffde00;
+            border: 2px solid #444;
+            border-radius: 15px;
+            cursor: pointer;
+            outline: none;
+        }
+        .dpad button:active {
+            background-color: #444;
+        }
+        .dpad .empty {
+            pointer-events: none;
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>パックﾏｰ - Pac-Mar -</h2>
+    <div class="ui-container">
+        SCORE: <span id="score">0</span> ｜ 残りエサ: <span id="dots">0</span>
+    </div>
+
+    <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+    <div>
+        <button id="restartBtn" onclick="resetGame()">もう一度遊ぶ (´ω`)</button>
+    </div>
+
+    <!-- スマホ・タブレット用コントローラー -->
+    <div class="dpad">
+        <div class="empty"></div>
+        <button onmousedown="setDir(0,-1)" ontouchstart="setDir(0,-1)">↑</button>
+        <div class="empty"></div>
+        <button onmousedown="setDir(-1,0)" ontouchstart="setDir(-1,0)">←</button>
+        <div class="empty"></div>
+        <button onmousedown="setDir(1,0)" ontouchstart="setDir(1,0)">→</button>
+        <div class="empty"></div>
+        <button onmousedown="setDir(0,1)" ontouchstart="setDir(0,1)">↓</button>
+        <div class="empty"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const restartBtn = document.getElementById("restartBtn");
+
+        const tileSize = 40; // 1マスのサイズ
+        const rows = 15;
+        const cols = 15;
+
+        let score = 0;
+        let dotsLeft = 0;
+        let powerModeTimer = 0;
+        let gameState = "PLAY"; // "PLAY", "GAMEOVER", "CLEAR"
+
+        // 1:壁, 0:通常ドット, 2:パワーエサ, 3:空白
+        const initialMap = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,2,0,0,0,0,0,1,0,0,0,0,0,2,1],
+            [1,0,1,1,0,1,0,1,0,1,0,1,1,0,1],
+            [1,0,1,1,0,1,0,0,0,1,0,1,1,0,1],
+            [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+            [1,0,1,1,0,1,1,1,1,1,0,1,1,0,1],
+            [1,0,0,0,0,0,0,3,0,0,0,0,0,0,1],
+            [1,1,1,0,1,1,3,3,3,1,1,0,1,1,1],
+            [1,0,0,0,0,1,1,1,1,1,0,0,0,0,1],
+            [1,0,1,1,0,0,0,0,0,0,0,1,1,0,1],
+            [1,0,1,1,0,1,1,1,1,1,0,1,1,0,1],
+            [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,1,0,1,1,1,1,0,1],
+            [1,2,0,0,0,0,0,0,0,0,0,0,0,2,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+        let map = [];
+
+        // プレイヤー情報
+        const player = {
+            x: 7 * tileSize,
+            y: 13 * tileSize,
+            dirX: 0,
+            dirY: 0,
+            nextDirX: 0,
+            nextDirY: 0,
+            speed: 2,
+            text: "(´ω`)ﾏｰ"
+        };
+
+        // 敵（ゴースト）クラス
+        class Ghost {
+            constructor(gx, gy, color, text) {
+                this.startX = gx * tileSize;
+                this.startY = gy * tileSize;
+                this.x = this.startX;
+                this.y = this.startY;
+                this.dirX = 0;
+                this.dirY = -1;
+                this.color = color;
+                this.text = text;
+            }
+
+            reset() {
+                this.x = this.startX;
+                this.y = this.startY;
+                this.dirX = 0;
+                this.dirY = -1;
+            }
+
+            update() {
+                // パワーモード中は敵が遅くなる
+                let currentSpeed = powerModeTimer > 0 ? 1 : 2;
+
+                // グリッドにぴったり重なった時だけ次の移動方向を決める
+                if (this.x % tileSize === 0 && this.y % tileSize === 0) {
+                    let gx = this.x / tileSize;
+                    let gy = this.y / tileSize;
+
+                    let validMoves = [];
+                    const dirs = [
+                        {x: 0, y: -1}, // 上
+                        {x: 0, y: 1},  // 下
+                        {x: -1, y: 0}, // 左
+                        {x: 1, y: 0}   // 右
+                    ];
+
+                    for (let d of dirs) {
+                        // 来た道をそのまま引き返さないようにする
+                        if (d.x === -this.dirX && d.y === -this.dirY) continue;
+                        if (canMove(gx + d.x, gy + d.y)) {
+                            validMoves.push(d);
+                        }
+                    }
+
+                    // 袋小路なら引き返しを許可
+                    if (validMoves.length === 0) {
+                        if (canMove(gx - this.dirX, gy - this.dirY)) {
+                            validMoves.push({x: -this.dirX, y: -this.dirY});
+                        }
+                    }
+
+                    if (validMoves.length > 0) {
+                        let choice = validMoves[Math.floor(Math.random() * validMoves.length)];
+                        this.dirX = choice.x;
+                        this.dirY = choice.y;
+                    }
+                }
+
+                this.x += this.dirX * currentSpeed;
+                this.y += this.dirY * currentSpeed;
+            }
+
+            draw() {
+                ctx.font = "bold 18px sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
+                if (powerModeTimer > 0) {
+                    // イジケ状態（残り少なくなると点滅風に）
+                    ctx.fillStyle = (powerModeTimer < 90 && Math.floor(powerModeTimer / 10) % 2 === 0) ? "#fff" : "#00ffff";
+                    ctx.fillText("(；ﾟДﾟ)", this.x + tileSize / 2, this.y + tileSize / 2);
+                } else {
+                    ctx.fillStyle = this.color;
+                    ctx.fillText(this.text, this.x + tileSize / 2, this.y + tileSize / 2);
+                }
+            }
+        }
+
+        // 3匹の敵(ﾟДﾟ)を配置
+        const ghosts = [
+            new Ghost(7, 6, "#ff3333", "(ﾟДﾟ)"), // 赤
+            new Ghost(6, 7, "#ffb8ff", "(ﾟДﾟ)"), // ピンク
+            new Ghost(8, 7, "#ffb851", "(ﾟДﾟ)")  // オレンジ
+        ];
+
+        function canMove(gx, gy) {
+            if (gx < 0 || gx >= cols || gy < 0 || gy >= rows) return false;
+            return map[gy][gx] !== 1;
+        }
+
+        function setDir(x, y) {
+            player.nextDirX = x;
+            player.nextDirY = y;
+        }
+
+        // キーボード入力
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "ArrowUp" || e.code === "KeyW") setDir(0, -1);
+            if (e.code === "ArrowDown" || e.code === "KeyS") setDir(0, 1);
+            if (e.code === "ArrowLeft" || e.code === "KeyA") setDir(-1, 0);
+            if (e.code === "ArrowRight" || e.code === "KeyD") setDir(1, 0);
+            
+            // イベントのデフォルト動作（画面スクロールなど）を防止
+            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+
+        function resetGame() {
+            score = 0;
+            powerModeTimer = 0;
+            gameState = "PLAY";
+            restartBtn.style.display = "none";
+
+            // マップの複製とエサのカウント
+            map = initialMap.map(row => [...row]);
+            dotsLeft = 0;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (map[r][c] === 0 || map[r][c] === 2) dotsLeft++;
+                }
+            }
+
+            player.x = 7 * tileSize;
+            player.y = 13 * tileSize;
+            player.dirX = 0;
+            player.dirY = 0;
+            player.nextDirX = 0;
+            player.nextDirY = 0;
+
+            for (let g of ghosts) g.reset();
+
+            loop();
+        }
+
+        function update() {
+            if (gameState !== "PLAY") return;
+
+            if (powerModeTimer > 0) powerModeTimer--;
+
+            // プレイヤーの移動ロジック
+            if (player.x % tileSize === 0 && player.y % tileSize === 0) {
+                let gx = player.x / tileSize;
+                let gy = player.y / tileSize;
+
+                // 先行入力の方向に曲がれるかチェック
+                if (canMove(gx + player.nextDirX, gy + player.nextDirY)) {
+                    player.dirX = player.nextDirX;
+                    player.dirY = player.nextDirY;
+                }
+                // 正面の壁判定
+                if (!canMove(gx + player.dirX, gy + player.dirY)) {
+                    player.dirX = 0;
+                    player.dirY = 0;
+                }
+            }
+
+            player.x += player.dirX * player.speed;
+            player.y += player.dirY * player.speed;
+
+            // エサを食べる判定
+            if (player.x % tileSize === 0 && player.y % tileSize === 0) {
+                let gx = player.x / tileSize;
+                let gy = player.y / tileSize;
+
+                if (map[gy][gx] === 0) {
+                    map[gy][gx] = 3;
+                    score += 10;
+                    dotsLeft--;
+                } else if (map[gy][gx] === 2) {
+                    map[gy][gx] = 3;
+                    score += 50;
+                    dotsLeft--;
+                    powerModeTimer = 450; // 約7.5秒間のイジケタイム
+                }
+            }
+
+            // 敵の更新
+            for (let g of ghosts) {
+                g.update();
+            }
+
+            // 当たり判定 (中心点のキョリで計測)
+            let px = player.x + tileSize / 2;
+            let py = player.y + tileSize / 2;
+
+            for (let g of ghosts) {
+                let gx = g.x + tileSize / 2;
+                let gy = g.y + tileSize / 2;
+                let dist = Math.hypot(px - gx, py - gy);
+
+                if (dist < 22) { // 接触
+                    if (powerModeTimer > 0) {
+                        // 敵をムシャムシャ
+                        score += 200;
+                        g.reset();
+                    } else {
+                        // ゲームオーバー
+                        gameState = "GAMEOVER";
+                        restartBtn.style.display = "block";
+                    }
+                }
+            }
+
+            // クリアチェック
+            if (dotsLeft === 0) {
+                gameState = "CLEAR";
+                restartBtn.style.display = "block";
+            }
+
+            // UIテキスト更新
+            document.getElementById("score").innerText = score;
+            document.getElementById("dots").innerText = dotsLeft;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 迷路とエサの描画
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (map[r][c] === 1) {
+                        ctx.fillStyle = "#1111aa";
+                        ctx.fillRect(c * tileSize + 2, r * tileSize + 2, tileSize - 4, tileSize - 4);
+                    } else if (map[r][c] === 0) {
+                        ctx.fillStyle = "#ffb8ae";
+                        ctx.beginPath();
+                        ctx.arc(c * tileSize + tileSize / 2, r * tileSize + tileSize / 2, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (map[r][c] === 2) {
+                        ctx.fillStyle = "#ffb8ae";
+                        ctx.beginPath();
+                        ctx.arc(c * tileSize + tileSize / 2, r * tileSize + tileSize / 2, 9, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            // プレイヤーの描画
+            ctx.fillStyle = "#ffde00";
+            ctx.font = "bold 15px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(player.text, player.x + tileSize / 2, player.y + tileSize / 2);
+
+            // 敵の描画
+            for (let g of ghosts) {
+                g.draw();
+            }
+
+            // ゲーム終了画面のオーバーレイ
+            if (gameState === "GAMEOVER") {
+                ctx.fillStyle = "rgba(0,0,0,0.75)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#ff3333";
+                ctx.font = "bold 40px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("GAME OVER (ﾟДﾟ)", canvas.width / 2, canvas.height / 2);
+            } else if (gameState === "CLEAR") {
+                ctx.fillStyle = "rgba(0,0,0,0.75)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#ffde00";
+                ctx.font = "bold 40px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("STAGE CLEAR 🎉", canvas.width / 2, canvas.height / 2 - 20);
+                ctx.font = "20px sans-serif";
+                ctx.fillText("(´ω`)ﾏｰ「完全食だﾏｰ」", canvas.width / 2, canvas.height / 2 + 30);
+            }
+        }
+
+        function loop() {
+            update();
+            draw();
+            if (gameState === "PLAY") {
+                requestAnimationFrame(loop);
+            }
+        }
+
+        // 初回スタート
+        resetGame();
+    </script>
+</body>
+</html>
