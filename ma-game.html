@@ -16,7 +16,6 @@
             background-color: #ffffff;
             border-bottom: 2px solid #555;
             box-shadow: 0px 10px 20px rgba(0,0,0,0.05);
-            cursor: pointer;
         }
         #info {
             margin-top: 20px;
@@ -30,12 +29,35 @@
             padding: 2px 6px;
             font-size: 0.9em;
         }
+        /* リスタートボタンのスタイル */
+        #restartBtn {
+            display: none; /* 通常時は隠す */
+            margin: 15px auto;
+            padding: 10px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #ff6347; /* 目立つトマト色 */
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.15);
+            transition: background 0.2s;
+        }
+        #restartBtn:hover {
+            background-color: #e54d30;
+        }
     </style>
 </head>
 <body>
     <h2>(´ω`)ﾏｰ ザ・ダイナソー</h2>
     <canvas id="gameCanvas" width="800" height="250"></canvas>
     
+    <!-- 追加したリスタートボタン -->
+    <div>
+        <button id="restartBtn" onclick="resetGame()">もう一度遊ぶ (´ω`)ﾏｰ</button>
+    </div>
+
     <div id="info">
         ジャンプ: <kbd>Space</kbd> / <kbd>↑</kbd> ｜ しゃがむ: <kbd>↓</kbd> (長押し)<br>
         ※ジャンプ中に <kbd>↓</kbd> で急降下します
@@ -44,8 +66,9 @@
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
+        const restartBtn = document.getElementById("restartBtn");
 
-        let gameSpeed = 6;
+        let gameSpeed = 5.5; // 初期速度を少しだけマイルドに
         let score = 0;
         let highScore = 0;
         let isGameOver = false;
@@ -58,21 +81,24 @@
         const ENEMY_FLYING = "⊂(ﾟДﾟ)⊃";
 
         const GROUND_Y = 220;
+        const FONT_STYLE = "bold 24px sans-serif";
+
+        ctx.font = FONT_STYLE;
 
         const player = {
             x: 50,
             y: GROUND_Y - 30,
-            width: 80,
+            width: ctx.measureText(TEXT_NORMAL).width,
             height: 30,
             dy: 0,
-            gravity: 0.6,
-            jumpPower: -10,
+            gravity: 0.5,       // 重力を少し軽く（滞空時間を長めに）
+            jumpPower: -11,     // ジャンプ力を強化
             isJumping: false,
             isDucking: false,
             
             draw() {
                 ctx.fillStyle = "#333";
-                ctx.font = "bold 24px sans-serif";
+                ctx.font = FONT_STYLE;
                 ctx.textBaseline = "top";
                 if (this.isDucking) {
                     this.height = 15;
@@ -89,20 +115,20 @@
         class Obstacle {
             constructor(type) {
                 this.x = canvas.width;
-                this.type = type;
+                this.type = type; 
                 
-                ctx.font = "bold 24px sans-serif";
+                ctx.font = FONT_STYLE;
                 
                 if (this.type === 0) {
                     this.text = ENEMY_GROUND;
                     this.width = ctx.measureText(this.text).width;
-                    this.height = 30;
+                    this.height = 28;
                     this.y = GROUND_Y - this.height;
                 } else {
                     this.text = ENEMY_FLYING;
                     this.width = ctx.measureText(this.text).width;
                     this.height = 20;
-                    this.y = (this.type === 1) ? GROUND_Y - 50 : GROUND_Y - 80;
+                    this.y = (this.type === 1) ? GROUND_Y - 45 : GROUND_Y - 75;
                 }
             }
 
@@ -112,7 +138,7 @@
 
             draw() {
                 ctx.fillStyle = this.type === 0 ? "#D2691E" : "#4682B4";
-                ctx.font = "bold 24px sans-serif";
+                ctx.font = FONT_STYLE;
                 ctx.textBaseline = "top";
                 ctx.fillText(this.text, this.x, this.y);
             }
@@ -122,13 +148,15 @@
             player.y = GROUND_Y - 30;
             player.dy = 0;
             player.isJumping = false;
+            player.isDucking = false;
             obstacles = [];
             score = 0;
-            gameSpeed = 6;
+            gameSpeed = 5.5;
             frame = 0;
             nextSpawn = 50;
             isGameOver = false;
-            requestAnimationFrame(loop);
+            restartBtn.style.display = "none"; // ボタンを隠す
+            loop();
         }
 
         const keys = {};
@@ -140,7 +168,7 @@
                 return;
             }
 
-            if ((e.code === "Space" || e.code === "ArrowUp") && !player.isJumping) {
+            if ((e.code === "Space" || e.code === "ArrowUp") && !player.isJumping && !player.isDucking) {
                 player.dy = player.jumpPower;
                 player.isJumping = true;
             }
@@ -150,23 +178,15 @@
             keys[e.code] = false;
         });
 
-        canvas.addEventListener("mousedown", () => {
-            if (isGameOver) resetGame();
-            else if (!player.isJumping) {
-                player.dy = player.jumpPower;
-                player.isJumping = true;
-            }
-        });
-
         function update() {
             if (isGameOver) return;
 
-            gameSpeed += 0.002;
+            gameSpeed += 0.001;
             score += 0.1;
 
             if (keys["ArrowDown"]) {
                 if (player.isJumping) {
-                    player.dy += player.gravity * 2;
+                    player.dy += player.gravity * 2; 
                 } else {
                     player.isDucking = true;
                 }
@@ -190,30 +210,38 @@
             frame++;
             if (frame >= nextSpawn) {
                 let type = 0;
-                if (score > 100) {
-                    if (Math.random() < 0.3) type = 1;
-                    else if (Math.random() < 0.3) type = 2;
+                if (score > 150) { 
+                    if (Math.random() < 0.25) type = 1;
+                    else if (Math.random() < 0.25) type = 2;
                 }
                 
                 obstacles.push(new Obstacle(type));
                 
-                let minFrames = Math.max(40, 100 - gameSpeed * 5);
-                let maxFrames = Math.max(80, 180 - gameSpeed * 5);
+                let minFrames = Math.max(50, 110 - gameSpeed * 5);
+                let maxFrames = Math.max(90, 190 - gameSpeed * 5);
                 nextSpawn = frame + Math.floor(Math.random() * (maxFrames - minFrames + 1) + minFrames);
             }
+
+            // 【超重要】当たり判定の計算を修正（文字の見た目より判定をひと回り小さく）
+            let pLeft = player.x + 18;
+            let pRight = player.x + player.width - 18;
+            let pTop = player.y + 6;
+            let pBottom = player.y + player.height;
 
             for (let i = 0; i < obstacles.length; i++) {
                 let obs = obstacles[i];
                 obs.update();
 
-                let hitboxPadding = 10;
-                if (player.x + hitboxPadding < obs.x + obs.width - hitboxPadding &&
-                    player.x + player.width - hitboxPadding > obs.x + hitboxPadding &&
-                    player.y + hitboxPadding < obs.y + obs.height - hitboxPadding &&
-                    player.y + player.height - hitboxPadding > obs.y + padding) {
-                    
+                let oLeft = obs.x + 12;
+                let oRight = obs.x + obs.width - 12;
+                let oTop = obs.y + 6;
+                let oBottom = obs.y + obs.height;
+
+                // 衝突判定（タイポを修正）
+                if (pLeft < oRight && pRight > oLeft && pTop < oBottom && pBottom > oTop) {
                     isGameOver = true;
                     if (score > highScore) highScore = Math.floor(score);
+                    restartBtn.style.display = "block"; // ボタンを表示
                 }
             }
 
@@ -252,7 +280,7 @@
                 ctx.font = "bold 30px sans-serif";
                 ctx.fillText("G A M E   O V E R", canvas.width / 2, canvas.height / 2 - 20);
                 ctx.font = "16px sans-serif";
-                ctx.fillText("スペースキー または ↑キー でリトライ", canvas.width / 2, canvas.height / 2 + 20);
+                ctx.fillText("下のボタンかスペースキーでリトライ", canvas.width / 2, canvas.height / 2 + 20);
                 ctx.textAlign = "left";
             }
         }
@@ -265,7 +293,6 @@
             }
         }
 
-        // 初回起動（ゲームループを開始します）
         loop();
     </script>
 </body>
