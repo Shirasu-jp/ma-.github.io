@@ -88,6 +88,7 @@
         let shakeTimer = 0;
         let shakeIntensity = 0;
         let warningTimer = 0;
+        let bossClearTimer = 0; // ボス撃破後の余韻タイマー
 
         let player = { x: 210, y: 500, w: 40, h: 40, hp: 3, maxHp: 3, speed: 5, weapon: 1, shield: 0 };
         let bullets = [];
@@ -169,13 +170,14 @@
             stageProgress = 0;
             isBossBattle = false;
             isNoDamageRun = true;
+            bossClearTimer = 0;
             startStageCommon();
         }
 
-        // 次のステージへ進む処理（ステージ数とスコアを引き継ぐ）
         function startNextStage() {
             stageProgress = 0;
             isBossBattle = false;
+            bossClearTimer = 0;
             startStageCommon();
         }
 
@@ -203,7 +205,7 @@
             else if (id === "TO_TITLE") { gameState = "TITLE"; buildTitleUI(); }
             else if (id === "TO_ACHIEVE") { gameState = "ACHIEVEMENTS"; buildAchieveUI(); }
             else if (id === "START_GAME") { initPlaySession(); }
-            else if (id === "NEXT_STAGE") { startNextStage(); } // 次ステージへ遷移
+            else if (id === "NEXT_STAGE") { startNextStage(); } 
             else if (id.startsWith("BUY_")) {
                 const type = id.replace("BUY_", "");
                 const currentLv = playerSave.upgrades[type];
@@ -302,7 +304,7 @@
         }
 
         function spawnEnemyCluster() {
-            if (isBossBattle || warningTimer > 0) return;
+            if (isBossBattle || warningTimer > 0 || bossClearTimer > 0) return;
             stageProgress++;
 
             if (stageProgress >= 100) {
@@ -361,6 +363,25 @@
 
             if (gameState !== "PLAY") return;
 
+            // ボス撃破後の余韻＆次ステージ遷移処理タイマー
+            if (bossClearTimer > 0) {
+                bossClearTimer--;
+                if (bossClearTimer === 0) {
+                    if(currentStage < 3) {
+                        currentStage++;
+                        gameState = "STAGE_CLEAR";
+                        UI_Buttons = [];
+                        addBtn("NEXT_STAGE", 140, 420, 200, 45, "NEXT STAGE ▶", "#00ff66");
+                    } else {
+                        playerSave.achievements.stage3_clear = true;
+                        gameState = "ENDING";
+                        UI_Buttons = [];
+                        addBtn("TO_TITLE", 140, 480, 200, 45, "RETURN TO MENU", "#00f0ff");
+                    }
+                    saveGame();
+                }
+            }
+
             if (player.x < 0) player.x = 0;
             if (player.x > canvas.width - player.w) player.x = canvas.width - player.w;
             if (player.y < 0) player.y = 0;
@@ -417,7 +438,20 @@
                 }
             });
 
-            items.forEach(it => it.y += 2.5);
+            // アイテムの挙動移動（★コインマグネット機能：ボス撃破後は自動で自機に高速吸引）
+            items.forEach(it => {
+                if (bossClearTimer > 0) {
+                    let dx = (player.x + player.w/2) - it.x;
+                    let dy = (player.y + player.h/2) - it.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist > 0) {
+                        it.x += (dx / dist) * 8.5; // 自機に向かって飛んでいく
+                        it.y += (dy / dist) * 8.5;
+                    }
+                } else {
+                    it.y += 2.5; // 通常時は下へスクロール落下のまま
+                }
+            });
             items = items.filter(it => it.y < canvas.height);
 
             particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life--; });
@@ -449,19 +483,13 @@
                                 enemies.splice(eIdx, 1);
                                 isBossBattle = false;
                                 
-                                if(currentStage < 3) {
-                                    currentStage++;
-                                    gameState = "STAGE_CLEAR";
-                                    UI_Buttons = [];
-                                    addBtn("NEXT_STAGE", 140, 420, 200, 45, "NEXT STAGE ▶", "#00ff66"); // IDとカラーを修正
-                                    saveGame();
-                                } else {
-                                    playerSave.achievements.stage3_clear = true;
-                                    gameState = "ENDING";
-                                    UI_Buttons = [];
-                                    addBtn("TO_TITLE", 140, 480, 200, 45, "RETURN TO MENU", "#00f0ff");
-                                    saveGame();
-                                }
+                                // 【重要】画面上のザコ敵と残った敵の弾をすべて消去して、安全にコインを回収させる
+                                enemies = [];
+                                enemyBullets = [];
+
+                                // 即座に画面を切り替えず、180フレーム（約3秒）のボーナスタイムへ突入
+                                bossClearTimer = 180;
+                                saveGame();
                             } else {
                                 if(Math.random() < 0.22) items.push({ x: e.x + e.w/2, y: e.y, type: "coin" });
                                 enemies.splice(eIdx, 1);
@@ -484,6 +512,9 @@
             }
 
             function handlePlayerHit() {
+                // ボス撃破後の余韻タイム中は無敵にする
+                if (bossClearTimer > 0) return;
+
                 if (player.shield > 0) {
                     player.shield--;
                     triggerShake(10, 5);
@@ -526,8 +557,6 @@
         // --- 9. レンダリング処理 ---
         function gameDraw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 描画基準をリセット
             ctx.textBaseline = "top";
             ctx.textAlign = "left";
 
@@ -623,7 +652,6 @@
                     }
                 });
 
-                // 自機（🚀）の直接描画バグ修正
                 if (player.hp > 0) {
                     ctx.font = "36px sans-serif";
                     ctx.fillText("🚀", player.x, player.y);
