@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ﾏｰインスイパー</title>
+    <style>
+        body {
+            text-align: center;
+            background-color: #f4f7f6;
+            font-family: sans-serif;
+            margin-top: 40px;
+            color: #333;
+        }
+        h2 {
+            margin-bottom: 10px;
+        }
+        .controls {
+            margin-bottom: 15px;
+        }
+        /* リスタートボタン */
+        #restartBtn {
+            padding: 10px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #4caf50;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        #restartBtn:hover {
+            background-color: #439a46;
+        }
+        /* モード切替ボタン（スマホ・マウス両用） */
+        .mode-btn {
+            padding: 8px 18px;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 0 5px;
+            border: 2px solid #ccc;
+            background-color: #fff;
+            cursor: pointer;
+            border-radius: 8px;
+            color: #555;
+        }
+        .mode-btn.active {
+            background-color: #008cba;
+            color: white;
+            border-color: #007ba4;
+        }
+        /* グリッド盤面 */
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(9, 46px);
+            grid-template-rows: repeat(9, 46px);
+            gap: 3px;
+            justify-content: center;
+            margin: 15px auto;
+            background-color: #bbada0;
+            padding: 6px;
+            border-radius: 6px;
+            width: fit-content;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+        /* 各マス目 */
+        .cell {
+            width: 46px;
+            height: 46px;
+            background-color: #cdc1b4;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px; /* (´ω`)が収まるサイズ */
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+        }
+        .cell:hover {
+            background-color: #beaf9e;
+        }
+        /* 開いたマス */
+        .cell.revealed {
+            background-color: #eee4da;
+            font-size: 18px; /* 数字は大きく */
+        }
+        /* 地雷マス */
+        .cell.mine {
+            background-color: #f65e3b;
+            color: #fff;
+            font-size: 11px;
+        }
+        #status {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 15px;
+            height: 30px;
+        }
+        /* 数字の色分け */
+        .c1 { color: #0044ff; }
+        .c2 { color: #008800; }
+        .c3 { color: #dd0000; }
+        .c4 { color: #000088; }
+    </style>
+</head>
+<body>
+
+    <h2>(´ω`) ﾏｰインスイパー (ﾟДﾟ)</h2>
+    
+    <div>
+        <button id="restartBtn" onclick="resetGame()">新しく始める (´ω`)</button>
+    </div>
+
+    <div class="controls">
+        <button id="modeDig" class="mode-btn active" onclick="setMode('dig')">掘る ⛏️ (´ω`)</button>
+        <button id="modeFlag" class="mode-btn" onclick="setMode('flag')">旗を立てる 🚩 ﾏｰ</button>
+    </div>
+
+    <!-- 9x9の盤面 -->
+    <div id="grid"></div>
+
+    <div id="status"></div>
+
+    <script>
+        const rows = 9;
+        const cols = 9;
+        const mineCount = 10; // 地雷(ﾟДﾟ)の数
+        
+        let board = [];
+        let isFirstClick = true;
+        let isGameOver = false;
+        let currentMode = 'dig'; // 'dig'(掘る) または 'flag'(旗)
+
+        function createBoardDOM() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            board = [];
+            
+            for (let r = 0; r < rows; r++) {
+                board[r] = [];
+                for (let c = 0; c < cols; c++) {
+                    const cellElement = document.createElement('div');
+                    cellElement.classList.add('cell');
+                    cellElement.innerText = '(´ω`)'; // 未開封状態
+                    
+                    const cell = {
+                        r: r,
+                        c: c,
+                        isMine: false,
+                        isRevealed: false,
+                        isFlagged: false,
+                        neighborMines: 0,
+                        element: cellElement
+                    };
+                    
+                    // 左クリック（またはタップ）
+                    cellElement.addEventListener('click', () => handleCellClick(r, c));
+                    
+                    // 右クリック（旗立て）
+                    cellElement.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        handleCellRightClick(r, c);
+                    });
+                    
+                    grid.appendChild(cellElement);
+                    board[r][c] = cell;
+                }
+            }
+        }
+
+        // 初手安全な地雷配置（最初のクリックとその周囲1マスには置かない）
+        function plantMines(startR, startC) {
+            let planted = 0;
+            while (planted < mineCount) {
+                let r = Math.floor(Math.random() * rows);
+                let c = Math.floor(Math.random() * cols);
+                
+                // 開始マスの周囲3x3エリアならスルー
+                if (Math.abs(r - startR) <= 1 && Math.abs(c - startC) <= 1) continue;
+                
+                if (!board[r][c].isMine) {
+                    board[r][c].isMine = true;
+                    planted++;
+                }
+            }
+            
+            // 周囲の地雷数を計算
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (board[r][c].isMine) continue;
+                    let count = 0;
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            let nr = r + dr;
+                            let nc = c + dc;
+                            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                                if (board[nr][nc].isMine) count++;
+                            }
+                        }
+                    }
+                    board[r][c].neighborMines = count;
+                }
+            }
+        }
+
+        // マスを開く処理
+        function revealCell(r, c) {
+            let cell = board[r][c];
+            if (cell.isRevealed || cell.isFlagged) return;
+            
+            cell.isRevealed = true;
+            cell.element.classList.add('revealed');
+            
+            // 地雷を踏んだ場合
+            if (cell.isMine) {
+                cell.element.classList.add('mine');
+                cell.element.innerText = '(ﾟДﾟ)';
+                endGame(false);
+                return;
+            }
+            
+            // 数字の表示
+            if (cell.neighborMines > 0) {
+                cell.element.innerText = cell.neighborMines;
+                cell.element.classList.add('c' + cell.neighborMines);
+            } else {
+                cell.element.innerText = ''; // 0なら空白
+                // 周囲が0なら自動で連鎖して開く（再帰）
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        let nr = r + dr;
+                        let nc = c + dc;
+                        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                            revealCell(nr, nc);
+                        }
+                    }
+                }
+            }
+            checkWin();
+        }
+
+        // 通常クリック時
+        function handleCellClick(r, c) {
+            if (isGameOver) return;
+            
+            // 旗立てモードの時
+            if (currentMode === 'flag') {
+                handleCellRightClick(r, c);
+                return;
+            }
+            
+            let cell = board[r][c];
+            if (cell.isFlagged || cell.isRevealed) return;
+            
+            if (isFirstClick) {
+                isFirstClick = false;
+                plantMines(r, c);
+            }
+            
+            revealCell(r, c);
+        }
+
+        // 右クリック（または旗モードでのクリック）
+        function handleCellRightClick(r, c) {
+            if (isGameOver) return;
+            let cell = board[r][c];
+            if (cell.isRevealed) return;
+            
+            cell.isFlagged = !cell.isFlagged;
+            if (cell.isFlagged) {
+                cell.element.innerText = 'ﾏｰ';
+                cell.element.style.color = '#e2441d';
+            } else {
+                cell.element.innerText = '(´ω`)';
+                cell.element.style.color = '#333';
+            }
+        }
+
+        // モード切り替え（掘る 💻 旗）
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('modeDig').classList.toggle('active', mode === 'dig');
+            document.getElementById('modeFlag').classList.toggle('active', mode === 'flag');
+        }
+
+        // クリアチェック
+        function checkWin() {
+            let win = true;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    // 地雷じゃないのに開いていないマスが1つでもあればまだクリアじゃない
+                    if (!board[r][c].isMine && !board[r][c].isRevealed) {
+                        win = false;
+                    }
+                }
+            }
+            if (win) endGame(true);
+        }
+
+        // ゲーム終了処理
+        function endGame(isWin) {
+            isGameOver = true;
+            const status = document.getElementById('status');
+            
+            if (isWin) {
+                status.innerText = '🎉 満点クリア！お見事！ (´ω`)ﾏｰ';
+                status.style.color = '#4caf50';
+            } else {
+                status.innerText = '💥 ドカン！ゲームオーバー (ﾟДﾟ)';
+                status.style.color = '#f44336';
+                
+                // すべての地雷をオープンにする
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        if (board[r][c].isMine) {
+                            board[r][c].element.classList.add('mine');
+                            board[r][c].element.innerText = '(ﾟДﾟ)';
+                        }
+                    }
+                }
+            }
+        }
+
+        // リセット
+        function resetGame() {
+            isFirstClick = true;
+            isGameOver = false;
+            document.getElementById('status').innerText = '';
+            setMode('dig');
+            createBoardDOM();
+        }
+
+        // 初回起動
+        createBoardDOM();
+    </script>
+</body>
+</html>
