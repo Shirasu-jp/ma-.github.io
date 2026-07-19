@@ -51,12 +51,12 @@
 
         // --- 1. 永続セーブデータ管理 (LocalStorage) ---
         const SAVE_KEY = "galaxy_shooter_extreme_v1";
-        let gameState = "TITLE"; // TITLE, SHOP, ACHIEVEMENTS, PLAY, GAMEOVER, CLEAR, ENDING
+        let gameState = "TITLE"; 
         
         let playerSave = {
             coins: 0,
             highScore: 0,
-            upgrades: { hp: 0, speed: 0, weapon: 0, shield: 0 }, // 各最大5
+            upgrades: { hp: 0, speed: 0, weapon: 0, shield: 0 }, 
             achievements: { first_boss: false, max_upgrade: false, coin_hunter: false, survivor: false, stage3_clear: false, no_damage_s1: false },
             stats: { total_kills: 0, total_coins: 0 }
         };
@@ -66,7 +66,6 @@
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
-                    // 構造変化への互換性担保
                     playerSave = { ...playerSave, ...parsed };
                     playerSave.upgrades = { ...playerSave.upgrades, ...parsed.upgrades };
                     playerSave.achievements = { ...playerSave.achievements, ...parsed.achievements };
@@ -81,16 +80,16 @@
 
         // --- 2. ゲーム内変数設定 ---
         let score = 0;
-        let currentStage = 1; // 1, 2, 3
-        let stageProgress = 0; // ボス出現までの進捗カウント
+        let currentStage = 1; 
+        let stageProgress = 0; 
         let isBossBattle = false;
-        let isNoDamageRun = true; // 実績用
+        let isNoDamageRun = true; 
         let frame = 0;
         let shakeTimer = 0;
         let shakeIntensity = 0;
         let warningTimer = 0;
 
-        let player = { x: 215, y: 500, w: 40, h: 40, hp: 3, maxHp: 3, speed: 5, weapon: 1, shield: 0 };
+        let player = { x: 210, y: 500, w: 40, h: 40, hp: 3, maxHp: 3, speed: 5, weapon: 1, shield: 0 };
         let bullets = [];
         let enemyBullets = [];
         let enemies = [];
@@ -99,15 +98,13 @@
         let stars = [];
         let shootCooldown = 0;
 
-        // アップグレード価格表 & 上昇値
         const shopConfig = {
             hp:     { name: "MAX HP",     prices: [150, 300, 500, 800, 1200], values: [3, 4, 5, 6, 7, 8] },
             speed:  { name: "ENGINE SPEED",prices: [100, 200, 400, 600, 1000], values: [5, 5.8, 6.6, 7.4, 8.2, 9.0] },
-            weapon: { name: "WEAPON SYSTEM",prices: [250, 500, 800, 1200, 2000], values: [1, 2, 3, 4, 5, 6] }, // 弾数・連射力
+            weapon: { name: "WEAPON SYSTEM",prices: [250, 500, 800, 1200, 2000], values: [1, 2, 3, 4, 5, 6] }, 
             shield: { name: "START SHIELD",prices: [150, 250, 450, 700, 1100], values: [0, 1, 2, 3, 4, 5] }
         };
 
-        // 星屑の初期化
         for(let i=0; i<50; i++) {
             stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2.5+0.5 });
         }
@@ -145,7 +142,6 @@
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             UI_Buttons.forEach(b => {
-                // ホバー演出
                 let isHover = (mouseX >= b.x && mouseX <= b.x+b.w && mouseY >= b.y && mouseY <= b.y+b.h);
                 ctx.fillStyle = isHover ? "rgba(0, 240, 255, 0.2)" : "rgba(255,255,255,0.05)";
                 ctx.fillRect(b.x, b.y, b.w, b.h);
@@ -156,7 +152,6 @@
                 ctx.font = "bold 15px sans-serif";
                 ctx.fillText(b.text, b.x + b.w/2, b.y + b.h/2);
             });
-            ctx.textAlign = "left"; // リセット
         }
 
         function handleCanvasClick(cx, cy) {
@@ -174,13 +169,23 @@
             stageProgress = 0;
             isBossBattle = false;
             isNoDamageRun = true;
+            startStageCommon();
+        }
+
+        // 次のステージへ進む処理（ステージ数とスコアを引き継ぐ）
+        function startNextStage() {
+            stageProgress = 0;
+            isBossBattle = false;
+            startStageCommon();
+        }
+
+        function startStageCommon() {
             bullets = [];
             enemyBullets = [];
             enemies = [];
             items = [];
             particles = [];
             
-            // ショップのステータスを機体に反映
             player.maxHp = shopConfig.hp.values[playerSave.upgrades.hp];
             player.hp = player.maxHp;
             player.speed = shopConfig.speed.values[playerSave.upgrades.speed];
@@ -198,6 +203,7 @@
             else if (id === "TO_TITLE") { gameState = "TITLE"; buildTitleUI(); }
             else if (id === "TO_ACHIEVE") { gameState = "ACHIEVEMENTS"; buildAchieveUI(); }
             else if (id === "START_GAME") { initPlaySession(); }
+            else if (id === "NEXT_STAGE") { startNextStage(); } // 次ステージへ遷移
             else if (id.startsWith("BUY_")) {
                 const type = id.replace("BUY_", "");
                 const currentLv = playerSave.upgrades[type];
@@ -214,7 +220,6 @@
             }
         }
 
-        // UIビルド
         function buildTitleUI() {
             UI_Buttons = [];
             addBtn("START_GAME", 140, 320, 200, 45, "MISSION START", "#00ff66");
@@ -241,7 +246,6 @@
             addBtn("TO_TITLE", 140, 520, 200, 45, "BACK TO MENU", "#fff");
         }
 
-        // 実績チェック
         function checkMaxUpgradeAchievement() {
             let u = playerSave.upgrades;
             if (u.hp === 5 && u.speed === 5 && u.weapon === 5 && u.shield === 5) {
@@ -249,7 +253,6 @@
             }
         }
 
-        // --- 7. コントロール入力検知 ---
         function updateMousePos(e) {
             const rect = canvas.getBoundingClientRect();
             let clientX, clientY;
@@ -273,8 +276,6 @@
         function shootPlayerWeapon() {
             if (shootCooldown > 0) { shootCooldown--; return; }
             let wLv = player.weapon;
-            
-            // 連射クールダウンをウェポンレベルで調整
             let cd = wLv >= 4 ? 6 : 8;
 
             if (wLv === 1) {
@@ -282,15 +283,15 @@
             } else if (wLv === 2) {
                 bullets.push({ x: player.x + 8, y: player.y, vx: 0, vy: -12, dmg: 1 });
                 bullets.push({ x: player.x + player.w - 12, y: player.y, vx: 0, vy: -12, dmg: 1 });
-            } else if (wLv === 3) { // 3WAY
+            } else if (wLv === 3) { 
                 bullets.push({ x: player.x + player.w/2 - 2, y: player.y, vx: 0, vy: -12, dmg: 1 });
                 bullets.push({ x: player.x + 4, y: player.y, vx: -2.5, vy: -11.5, dmg: 1 });
                 bullets.push({ x: player.x + player.w - 8, y: player.y, vx: 2.5, vy: -11.5, dmg: 1 });
-            } else if (wLv === 4) { // 3WAY強化
+            } else if (wLv === 4) { 
                 bullets.push({ x: player.x + player.w/2 - 3, y: player.y, vx: 0, vy: -14, dmg: 1.5 });
                 bullets.push({ x: player.x, y: player.y, vx: -3, vy: -13, dmg: 1 });
                 bullets.push({ x: player.x + player.w, y: player.y, vx: 3, vy: -13, dmg: 1 });
-            } else { // 5段階目以上：ハイパー5WAY
+            } else { 
                 bullets.push({ x: player.x + player.w/2 - 3, y: player.y, vx: 0, vy: -15, dmg: 2 });
                 bullets.push({ x: player.x + 6, y: player.y, vx: -2.5, vy: -14, dmg: 1 });
                 bullets.push({ x: player.x + player.w - 10, y: player.y, vx: 2.5, vy: -14, dmg: 1 });
@@ -304,13 +305,11 @@
             if (isBossBattle || warningTimer > 0) return;
             stageProgress++;
 
-            // ボス出現トリガー (進行度100で警告演出へ)
             if (stageProgress >= 100) {
                 warningTimer = 150;
                 return;
             }
 
-            // ステージごとの敵出現パターン
             if (frame % (Math.max(15, 35 - currentStage * 5)) === 0) {
                 let typeRand = Math.random();
                 let ex = Math.random() * (canvas.width - 50) + 10;
@@ -319,23 +318,23 @@
                     if (typeRand < 0.7) {
                         enemies.push({ x: ex, y: -40, w: 30, h: 30, hp: 1, maxHp: 1, type: "meteor", s: 2, score: 50 });
                     } else {
-                        enemies.push({ x: ex, y: -40, w: 35, h: 35, hp: 2, maxHp: 2, type: "drone1", s: 2.5, score: 100, lastShoot: 0 });
+                        enemies.push({ x: ex, y: -40, w: 35, h: 35, hp: 2, maxHp: 2, type: "drone1", s: 2.5, score: 100 });
                     }
                 } else if (currentStage === 2) {
                     if (typeRand < 0.4) {
                         enemies.push({ x: ex, y: -40, w: 30, h: 30, hp: 2, maxHp: 2, type: "meteor", s: 3, score: 50 });
                     } else if (typeRand < 0.8) {
-                        enemies.push({ x: ex, y: -40, w: 35, h: 35, hp: 2, maxHp: 2, type: "drone1", s: 3, score: 100, lastShoot: 0 });
+                        enemies.push({ x: ex, y: -40, w: 35, h: 35, hp: 2, maxHp: 2, type: "drone1", s: 3, score: 100 });
                     } else {
-                        enemies.push({ x: ex, y: -40, w: 40, h: 35, hp: 4, maxHp: 4, type: "scout", s: 1.5, score: 200, lastShoot: 0, dx: Math.random() < 0.5 ? 1 : -1 });
+                        enemies.push({ x: ex, y: -40, w: 40, h: 35, hp: 4, maxHp: 4, type: "scout", s: 1.5, score: 200, dx: Math.random() < 0.5 ? 1 : -1 });
                     }
-                } else { // Stage 3
+                } else { 
                     if (typeRand < 0.3) {
-                        enemies.push({ x: ex, y: -40, w: 35, h: 35, hp: 3, maxHp: 3, type: "drone1", s: 3.5, score: 100, lastShoot: 0 });
+                        enemies.push({ x: ex, y: -40, w: 35, h: 35, hp: 3, maxHp: 3, type: "drone1", s: 3.5, score: 100 });
                     } else if (typeRand < 0.7) {
-                        enemies.push({ x: ex, y: -40, w: 40, h: 35, hp: 5, maxHp: 5, type: "scout", s: 2, score: 200, lastShoot: 0, dx: Math.random() < 0.5 ? 1.5 : -1.5 });
+                        enemies.push({ x: ex, y: -40, w: 40, h: 35, hp: 5, maxHp: 5, type: "scout", s: 2, dx: Math.random() < 0.5 ? 1.5 : -1.5, score: 200 });
                     } else {
-                        enemies.push({ x: ex, y: -40, w: 45, h: 45, hp: 8, maxHp: 8, type: "cruiser", s: 1.2, score: 400, lastShoot: 0 });
+                        enemies.push({ x: ex, y: -40, w: 45, h: 45, hp: 8, maxHp: 8, type: "cruiser", s: 1.2, score: 400 });
                     }
                 }
             }
@@ -355,7 +354,6 @@
         function gameUpdate() {
             frame++;
 
-            // 背景星屑スクロール
             stars.forEach(s => {
                 s.y += s.s * (isBossBattle ? 0.5 : 1);
                 if(s.y > canvas.height) { s.y = 0; s.x = Math.random()*canvas.width; }
@@ -363,7 +361,6 @@
 
             if (gameState !== "PLAY") return;
 
-            // プレイヤー位置補正
             if (player.x < 0) player.x = 0;
             if (player.x > canvas.width - player.w) player.x = canvas.width - player.w;
             if (player.y < 0) player.y = 0;
@@ -371,7 +368,6 @@
 
             shootPlayerWeapon();
 
-            // WARNING 警告タイマー処理
             if (warningTimer > 0) {
                 warningTimer--;
                 if (warningTimer === 0) triggerBossSpawn();
@@ -379,47 +375,38 @@
 
             spawnEnemyCluster();
 
-            // 自機弾移動
             bullets.forEach(b => { b.x += b.vx; b.y += b.vy; });
             bullets = bullets.filter(b => b.y > -20 && b.x > -20 && b.x < canvas.width + 20);
 
-            // 敵機弾移動
             enemyBullets.forEach(eb => { eb.x += eb.vx; eb.y += eb.vy; });
             enemyBullets = enemyBullets.filter(eb => eb.y < canvas.height + 20 && eb.x > -20 && eb.x < canvas.width + 20);
 
-            // 敵移動 & AI攻撃ロジック
             enemies.forEach(e => {
                 if (e.isBoss) {
-                    e.y += e.s; if (e.y > 70) e.y = 70; // 定位置停止
+                    e.y += e.s; if (e.y > 70) e.y = 70; 
                     e.x += e.dir * (e.type === "boss2" ? 2 : 1);
                     if (e.x < 10 || e.x > canvas.width - e.w - 10) e.dir *= -1;
 
-                    // ボス特殊攻撃
                     if (frame % 45 === 0) {
                         if (e.type === "boss1") {
-                            // 下方に3発
                             for(let i=-1; i<=1; i++) enemyBullets.push({ x: e.x + e.w/2, y: e.y + e.h, vx: i*1.5, vy: 5 });
                         } else if (e.type === "boss2") {
-                            // 扇状5WAY弾
                             for(let i=-2; i<=2; i++) enemyBullets.push({ x: e.x + e.w/2, y: e.y + e.h, vx: i*2, vy: 4.5 });
                         }
                     }
                     if (e.type === "boss3" && frame % 60 === 0) {
-                        // 渦状全方位弾
                         for(let a=0; a<8; a++) {
                             let angle = (frame*0.05) + (a * Math.PI / 4);
                             enemyBullets.push({ x: e.x + e.w/2, y: e.y + e.h - 20, vx: Math.cos(angle)*4, vy: Math.sin(angle)*4 });
                         }
                     }
                 } else {
-                    // 一般のザコ敵AI
                     e.y += e.s;
                     if (e.type === "scout") {
                         e.x += e.dx; if(e.x < 10 || e.x > canvas.width - e.w - 10) e.dx *= -1;
                         if(frame % 70 === 0) enemyBullets.push({ x: e.x + e.w/2, y: e.y + e.h, vx: 0, vy: 5 });
                     }
                     if (e.type === "drone1" && frame % 80 === 0) {
-                        // プレイヤー狙い撃ち弾弾道計算
                         let angle = Math.atan2(player.y - e.y, player.x - e.x);
                         enemyBullets.push({ x: e.x + e.w/2, y: e.y + e.h, vx: Math.cos(angle)*4.5, vy: Math.sin(angle)*4.5 });
                     }
@@ -430,17 +417,13 @@
                 }
             });
 
-            // アイテム回収移動
             items.forEach(it => it.y += 2.5);
             items = items.filter(it => it.y < canvas.height);
 
-            // パーティクルアニメ更新
             particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life--; });
             particles = particles.filter(p => p.life > 0);
 
-            // --- 衝突判定セクション ---
-            
-            // 1. 自機弾 vs 敵機
+            // --- 衝突判定 ---
             for(let bIdx = bullets.length-1; bIdx >= 0; bIdx--) {
                 let b = bullets[bIdx];
                 for(let eIdx = enemies.length-1; eIdx >= 0; eIdx--) {
@@ -451,30 +434,26 @@
                         spawnExplosion(b.x, b.y, "#00f0ff", 3);
                         
                         if(e.hp <= 0) {
-                            // 撃破達成
                             score += e.score;
                             playerSave.stats.total_kills++;
                             spawnExplosion(e.x + e.w/2, e.y + e.h/2, e.isBoss ? "#ff0055" : "#ffaa00", e.isBoss ? 40 : 12);
                             
-                            // コイン排出判定 (ボスは大量確定、ザコは20%の確率)
                             if (e.isBoss) {
                                 triggerShake(30, 12);
                                 let drops = e.type === "boss1" ? 10 : (e.type === "boss2" ? 20 : 40);
                                 for(let k=0; k<drops; k++) items.push({ x: e.x + Math.random()*e.w, y: e.y + Math.random()*e.h, type: "coin" });
                                 
-                                // ボス個別撃破実績
                                 playerSave.achievements.first_boss = true;
                                 if(currentStage === 1 && isNoDamageRun) playerSave.achievements.no_damage_s1 = true;
                                 
-                                // 次ステージ移行判定
                                 enemies.splice(eIdx, 1);
                                 isBossBattle = false;
+                                
                                 if(currentStage < 3) {
                                     currentStage++;
-                                    stageProgress = 0;
                                     gameState = "STAGE_CLEAR";
                                     UI_Buttons = [];
-                                    addBtn("START_GAME", 140, 420, 200, 45, "NEXT STAGE ▶", "#00ff6 green");
+                                    addBtn("NEXT_STAGE", 140, 420, 200, 45, "NEXT STAGE ▶", "#00ff66"); // IDとカラーを修正
                                     saveGame();
                                 } else {
                                     playerSave.achievements.stage3_clear = true;
@@ -493,7 +472,6 @@
                 }
             }
 
-            // 2. アイテム回収判定
             for(let iIdx = items.length-1; iIdx >= 0; iIdx--) {
                 let it = items[iIdx];
                 if(it.x > player.x - 10 && it.x < player.x + player.w + 10 && it.y > player.y - 10 && it.y < player.y + player.h + 10) {
@@ -505,7 +483,6 @@
                 }
             }
 
-            // 自機被弾関数リファクタ
             function handlePlayerHit() {
                 if (player.shield > 0) {
                     player.shield--;
@@ -526,7 +503,6 @@
                 }
             }
 
-            // 3. 敵弾 vs プレイヤー自機
             for(let ebIdx = enemyBullets.length-1; ebIdx >= 0; ebIdx--) {
                 let eb = enemyBullets[ebIdx];
                 if(eb.x > player.x + 4 && eb.x < player.x + player.w - 4 && eb.y > player.y + 4 && eb.y < player.y + player.h - 4) {
@@ -536,24 +512,25 @@
                 }
             }
 
-            // 4. 敵機体肉薄体当たり vs プレイヤー自機
             enemies.forEach(e => {
                 if(e.x < player.x + player.w - 6 && e.x + e.w > player.x + 6 && e.y < player.y + player.h - 6 && e.y + e.h > player.y + 6) {
-                    e.hp = 0; // ザコは即自壊
+                    e.hp = 0; 
                     spawnExplosion(e.x + e.w/2, e.y + e.h/2, "#ffaa00", 10);
                     handlePlayerHit();
                 }
             });
 
-            // 画面外の敵ユニットを消去
             enemies = enemies.filter(e => e.y < canvas.height + 40);
         }
 
-        // --- 9. 全グラフィックスレンダリング処理 ---
+        // --- 9. レンダリング処理 ---
         function gameDraw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 描画基準をリセット
+            ctx.textBaseline = "top";
+            ctx.textAlign = "left";
 
-            // スクリーンシェイク適用開始
             ctx.save();
             if (shakeTimer > 0) {
                 let dx = (Math.random() - 0.5) * shakeIntensity;
@@ -562,12 +539,10 @@
                 shakeTimer--;
             }
 
-            // 宇宙の星背景
             ctx.fillStyle = "#fff";
             stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
 
             if (gameState === "TITLE") {
-                // タイトルロゴ
                 ctx.textAlign = "center";
                 ctx.fillStyle = "#00f0ff";
                 ctx.font = "bold 32px sans-serif";
@@ -586,15 +561,14 @@
                 ctx.fillStyle = "#00f0ff"; ctx.font = "bold 24px sans-serif"; ctx.fillText("HANGAR UPGRADE SHOP", 30, 60);
                 ctx.fillStyle = "#ffd700"; ctx.font = "bold 16px sans-serif"; ctx.fillText(`CURRENT COINS: ${playerSave.coins} COINS`, 30, 95);
                 
-                // 強化項目ステータスバー描画
                 let startY = 145;
                 ["hp", "speed", "weapon", "shield"].forEach(type => {
                     ctx.fillStyle = "#aaa"; ctx.font = "bold 13px sans-serif"; ctx.fillText(shopConfig[type].name, 30, startY);
                     let lv = playerSave.upgrades[type];
                     for(let i=0; i<5; i++) {
                         ctx.fillStyle = i < lv ? "#00ff66" : "#222";
-                        ctx.fillRect(30 + i*22, startY+10, 16, 12);
-                        ctx.strokeStyle = "#555"; ctx.strokeRect(30 + i*22, startY+10, 16, 12);
+                        ctx.fillRect(30 + i*22, startY+18, 16, 12);
+                        ctx.strokeStyle = "#555"; ctx.strokeRect(30 + i*22, startY+18, 16, 12);
                     }
                     startY += 65;
                 });
@@ -613,39 +587,33 @@
                 acList.forEach(a => {
                     let cleared = playerSave.achievements[a.k];
                     ctx.fillStyle = cleared ? "#ffaa00" : "#444"; ctx.font = "bold 15px sans-serif"; ctx.fillText(a.n + (cleared ? " [COMPLETE]" : ""), 30, sy);
-                    ctx.fillStyle = cleared ? "#fff" : "#666"; ctx.font = "12px sans-serif"; ctx.fillText(a.d, 35, sy+18);
+                    ctx.fillStyle = cleared ? "#fff" : "#666"; ctx.font = "12px sans-serif"; ctx.fillText(a.d, 35, sy+22);
                     sy += 65;
                 });
                 drawButtons();
             }
             else if (gameState === "PLAY" || gameState === "STAGE_CLEAR" || gameState === "GAMEOVER") {
-                // 自機弾
                 ctx.fillStyle = "#00ffff";
                 bullets.forEach(b => ctx.fillRect(b.x, b.y, 5, 12));
 
-                // 敵機弾
                 ctx.fillStyle = "#ff3366";
                 enemyBullets.forEach(eb => {
                     ctx.beginPath(); ctx.arc(eb.x, eb.y, 4, 0, Math.PI*2); ctx.fill();
                 });
 
-                // アイテム (COIN ⭐)
                 ctx.font = "16px sans-serif";
                 items.forEach(it => ctx.fillText("🪙", it.x, it.y));
 
-                // パーティクル星火花
                 particles.forEach(p => {
                     ctx.fillStyle = p.color;
                     ctx.fillRect(p.x, p.y, p.size, p.size);
                 });
 
-                // 敵キャラクターのビジュアルレンダリング
                 enemies.forEach(e => {
                     if (e.isBoss) {
                         ctx.font = e.type === "boss3" ? "90px sans-serif" : "65px sans-serif";
-                        ctx.fillText(e.type === "boss3" ? "🛸" : "🛸", e.x, e.y);
+                        ctx.fillText("🛸", e.x, e.y);
                         
-                        // ボス用HPインジケータ
                         ctx.fillStyle = "rgba(255,255,255,0.15)"; ctx.fillRect(e.x, e.y - 15, e.w, 6);
                         ctx.fillStyle = "#ff0055"; ctx.fillRect(e.x, e.y - 15, (e.hp / e.maxHp)*e.w, 6);
                     } else {
@@ -655,50 +623,45 @@
                     }
                 });
 
-                // 自機（🚀）とシールドバリアエフェクト
+                // 自機（🚀）の直接描画バグ修正
                 if (player.hp > 0) {
                     ctx.font = "36px sans-serif";
-                    ctx.fillText(player.text, player.x, player.y);
+                    ctx.fillText("🚀", player.x, player.y);
                     if (player.shield > 0) {
                         ctx.strokeStyle = "rgba(0, 240, 255, 0.6)"; ctx.lineWidth = 3;
-                        ctx.beginPath(); ctx.arc(player.x + player.w/2, player.y + player.h/2 - 4, 28, 0, Math.PI*2); ctx.stroke();
+                        ctx.beginPath(); ctx.arc(player.x + player.w/2, player.y + player.h/2, 28, 0, Math.PI*2); ctx.stroke();
                     }
                 }
 
-                // WARNING 赤色緊急アラート警告
                 if (warningTimer > 0) {
                     if (Math.floor(frame / 12) % 2 === 0) {
                         ctx.fillStyle = "rgba(255, 0, 50, 0.2)"; ctx.fillRect(0, 220, canvas.width, 90);
                         ctx.fillStyle = "#ff0033"; ctx.font = "bold 30px sans-serif"; ctx.textAlign = "center";
-                        ctx.fillText("⚠️ EMERGENCY WARNING ⚠️", canvas.width/2, 255);
-                        ctx.font = "14px sans-serif"; ctx.fillText("HUGE ALIEN WARSHIP APPROACHING", canvas.width/2, 295);
-                        ctx.textAlign = "left";
+                        ctx.fillText("⚠️ EMERGENCY WARNING ⚠️", canvas.width/2, 235);
+                        ctx.font = "14px sans-serif"; ctx.fillText("HUGE ALIEN WARSHIP APPROACHING", canvas.width/2, 275);
                     }
                 }
 
-                // HUDヘッダー表示
+                // HUDヘッダー
                 ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(0, 0, canvas.width, 40);
-                ctx.fillStyle = "#fff"; ctx.font = "bold 13px sans-serif";
-                ctx.fillText(`STAGE: ${currentStage}`, 15, 25);
-                ctx.fillText(`SCORE: ${score}`, 100, 25);
-                ctx.fillText(`COIN: ${playerSave.coins}`, 220, 25);
+                ctx.fillStyle = "#fff"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "left";
+                ctx.fillText(`STAGE: ${currentStage}`, 15, 12);
+                ctx.fillText(`SCORE: ${score}`, 100, 12);
+                ctx.fillText(`COIN: ${playerSave.coins}`, 220, 12);
 
-                // 残機HPハート表示
                 let heartStr = ""; for(let h=0; h<player.maxHp; h++) heartStr += (h < player.hp ? "❤️" : "🖤");
-                ctx.fillText(heartStr, 360, 25);
+                ctx.fillText(heartStr, 360, 12);
 
-                // ステージクリアオーバーレイ画面
                 if (gameState === "STAGE_CLEAR") {
                     ctx.fillStyle = "rgba(0,0,0,0.75)"; ctx.fillRect(0,0,canvas.width,canvas.height);
                     ctx.textAlign = "center"; ctx.fillStyle = "#00ff66"; ctx.font = "bold 32px sans-serif";
-                    ctx.fillText(`STAGE ${currentStage - 1} CLEAR 🎖️`, canvas.width/2, 260);
+                    ctx.fillText(`STAGE ${currentStage - 1} CLEAR 🎖️`, canvas.width/2, 240);
                     ctx.fillStyle = "#fff"; ctx.font = "16px sans-serif";
-                    ctx.fillText("ハンガーにデータが同期されました", canvas.width/2, 310);
-                    ctx.fillText("機体を強化して次の作戦へ進みましょう", canvas.width/2, 335);
-                    drawButtons(); ctx.textAlign = "left";
+                    ctx.fillText("ハンガーにデータが同期されました", canvas.width/2, 300);
+                    ctx.fillText("機体を強化して次の作戦へ進みましょう", canvas.width/2, 325);
+                    drawButtons(); 
                 }
 
-                // ゲームオーバーオーバーレイ画面
                 if (gameState === "GAMEOVER") {
                     ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0,0,canvas.width,canvas.height);
                     ctx.textAlign = "center"; ctx.fillStyle = "#ff3333"; ctx.font = "bold 36px sans-serif";
@@ -706,11 +669,10 @@
                     ctx.fillStyle = "#aaa"; ctx.font = "16px sans-serif";
                     ctx.fillText(`獲得スコア: ${score} PTS`, canvas.width/2, 300);
                     ctx.fillText("集めたコインはハンガーに持ち帰れます！", canvas.width/2, 330);
-                    drawButtons(); ctx.textAlign = "left";
+                    drawButtons(); 
                 }
             }
             else if (gameState === "ENDING") {
-                // オールクリアエンディング
                 ctx.fillStyle = "rgba(0,0,0,0.9)"; ctx.fillRect(0,0,canvas.width,canvas.height);
                 ctx.textAlign = "center"; ctx.fillStyle = "#ffd700"; ctx.font = "bold 34px sans-serif";
                 ctx.fillText("🏆 ALL STAGES CLEAR 🏆", canvas.width/2, 180);
@@ -719,10 +681,10 @@
                 ctx.fillText("あなたは伝説のエースパイロットです。", canvas.width/2, 290);
                 ctx.fillStyle = "#00f0ff"; ctx.font = "bold 20px sans-serif";
                 ctx.fillText(`FINAL SCORE: ${score} PTS`, canvas.width/2, 360);
-                drawButtons(); ctx.textAlign = "left";
+                drawButtons(); 
             }
 
-            ctx.restore(); // スクリーンシェイク適用終了
+            ctx.restore(); 
         }
 
         function loop() {
@@ -731,7 +693,6 @@
             requestAnimationFrame(loop);
         }
 
-        // 初期ロード起動
         loadGame();
         buildTitleUI();
         loop();
