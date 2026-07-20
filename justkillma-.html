@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>魔神をシバくのだ！ - MAR PORTAL</title>
+    <title>魔神をシバくのだ！ - ﾏｰ PORTAL</title>
     <style>
         * {
             box-sizing: border-box;
@@ -39,11 +39,12 @@
             cursor: pointer;
             font-weight: bold;
             text-decoration: none;
+            font-size: 13px;
         }
         .stats-container {
             display: flex;
-            gap: 20px;
-            font-size: 14px;
+            gap: 15px;
+            font-size: 13px;
             font-weight: bold;
         }
         .stat-item span {
@@ -58,42 +59,43 @@
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            padding: 20px;
+            padding: 15px;
             background: radial-gradient(circle, #222244 0%, #0f0f1a 100%);
         }
 
         /* ボスエリア */
         .boss-area {
             text-align: center;
-            margin-top: 10px;
+            margin-top: 5px;
             z-index: 5;
         }
         .stage-title {
-            font-size: 14px;
+            font-size: 13px;
             color: #aaa;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
         .boss-name {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #ff4757;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             text-shadow: 0 0 10px rgba(255,71,87,0.5);
         }
         .hp-bar-container {
-            width: 300px;
-            height: 24px;
+            width: 280px;
+            height: 22px;
             background: #333;
             border: 2px solid #fff;
-            border-radius: 12px;
+            border-radius: 11px;
             overflow: hidden;
             position: relative;
+            margin: 0 auto;
         }
         .hp-bar {
             height: 100%;
             background: linear-gradient(90deg, #ff4757, #ff6b81);
             width: 100%;
-            transition: width 0.1s linear;
+            transition: width 0.05s linear;
         }
         .hp-text {
             position: absolute;
@@ -104,19 +106,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             text-shadow: 1px 1px 2px #000;
         }
         .boss-avatar {
-            font-size: 80px;
-            margin-top: 15px;
+            font-size: 70px;
+            margin-top: 10px;
             cursor: pointer;
             transition: transform 0.05s;
             display: inline-block;
         }
         .boss-avatar:active {
-            transform: scale(0.9);
+            transform: scale(0.85);
         }
 
         /* マイヤーたちが暴れるフィールド */
@@ -132,9 +134,9 @@
         }
         .mar-unit {
             position: absolute;
-            font-size: 24px;
-            transition: transform 0.5s linear;
-            filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
+            font-size: 22px;
+            transition: transform 0.3s linear;
+            filter: drop-shadow(0 0 4px rgba(255,255,255,0.3));
         }
 
         /* ダメージポップアップ文字 */
@@ -142,47 +144,50 @@
             position: absolute;
             font-weight: bold;
             color: #ffd700;
-            font-size: 18px;
-            animation: floatUp 0.6s ease-out forwards;
+            font-size: 16px;
+            animation: floatUp 0.5s ease-out forwards;
             pointer-events: none;
             z-index: 20;
             text-shadow: 1px 1px 0 #000;
         }
         @keyframes floatUp {
             0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-50px) scale(1.3); opacity: 0; }
+            100% { transform: translateY(-40px) scale(1.2); opacity: 0; }
         }
 
-        /* 下部コントロール・ショップエリア */
+        /* ショップパネル */
         .shop-panel {
             width: 100%;
-            max-width: 500px;
+            max-width: 480px;
             background: rgba(26, 26, 46, 0.95);
             border: 2px solid #e94560;
-            border-radius: 15px;
-            padding: 15px;
+            border-radius: 12px;
+            padding: 12px;
             z-index: 10;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         .shop-title {
-            font-size: 14px;
+            font-size: 13px;
             color: #e94560;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             border-bottom: 1px solid #333;
-            padding-bottom: 5px;
+            padding-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .upgrade-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
         .upgrade-btn {
             background: #16213e;
             border: 1px solid #0f3460;
             color: white;
-            padding: 10px 15px;
-            border-radius: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -194,21 +199,84 @@
             border-color: #e94560;
         }
         .upgrade-btn:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
         }
         .upgrade-info div:first-child {
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
         }
         .upgrade-info div:last-child {
-            font-size: 11px;
+            font-size: 10px;
             color: #aaa;
         }
         .upgrade-cost {
             color: #ffd700;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
+        }
+
+        /* 転生ボタン用スタイル */
+        .prestige-btn {
+            background: linear-gradient(135deg, #f39c12, #d35400);
+            border: 1px solid #f1c40f;
+            color: white;
+            margin-top: 6px;
+        }
+        .prestige-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #e67e22, #b93d00);
+        }
+
+        /* クリア演出モーダル */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            display: none;
+        }
+        .modal-content {
+            background: #1a1a2e;
+            border: 3px solid #ffd700;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255,215,0,0.5);
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-title {
+            font-size: 22px;
+            color: #ffd700;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .modal-desc {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .modal-btn {
+            background: #ffd700;
+            color: #0f0f1a;
+            border: none;
+            padding: 10px 25px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .modal-btn:active {
+            transform: scale(0.95);
         }
     </style>
 </head>
@@ -218,12 +286,12 @@
         <a href="index.html" class="back-btn">⬅ ポータルへ戻る</a>
         <div class="stats-container">
             <div class="stat-item">💰 所持金: <span id="gold-display">0</span> G</div>
-            <div class="stat-item">⭐ 総ﾏｰPt: <span id="portal-pt-display">0</span> pt</div>
+            <div class="stat-item">👑 転生回数: <span id="prestige-display">0</span>回</div>
         </div>
     </header>
 
     <div class="game-main" id="game-main">
-        <!-- バトルフィールド（ﾏｰが走り回る場所） -->
+        <!-- バトルフィールド -->
         <div class="battle-field" id="battle-field"></div>
 
         <!-- ボスエリア -->
@@ -234,18 +302,20 @@
                 <div class="hp-bar" id="hp-bar"></div>
                 <div class="hp-text" id="hp-text">100 / 100</div>
             </div>
-            <!-- ボスを直接タップしても攻撃できる -->
             <div class="boss-avatar" id="boss-avatar" onclick="tapBoss(event)">( ˘ω˘ )</div>
         </div>
 
         <!-- ショップパネル -->
         <div class="shop-panel">
-            <div class="shop-title">⚡ 強化・育成メニュー</div>
+            <div class="shop-title">
+                <span>⚡ 強化・育成メニュー</span>
+                <span style="font-size:11px; color:#aaa;">倍率: x<span id="multiplier-display">1</span></span>
+            </div>
             <div class="upgrade-list">
                 <button class="upgrade-btn" id="btn-click-up" onclick="buyClickPower()">
                     <div class="upgrade-info">
                         <div>ﾏｰパンチ強化 (Lv.<span id="lvl-click">1</span>)</div>
-                        <div>タップ時の攻撃力がアップ</div>
+                        <div>タップ時の攻撃力アップ</div>
                     </div>
                     <div class="upgrade-cost" id="cost-click">10 G</div>
                 </button>
@@ -256,35 +326,133 @@
                     </div>
                     <div class="upgrade-cost" id="cost-auto">50 G</div>
                 </button>
+                <button class="upgrade-btn prestige-btn" id="btn-prestige" onclick="doPrestige()" disabled>
+                    <div class="upgrade-info">
+                        <div>🔥 ﾏｰ転生 (プレステージ)</div>
+                        <div>すべてをリセットし、獲得ゴールド倍率が永続アップ！ (Stage 10到達で解放)</div>
+                    </div>
+                    <div class="upgrade-cost" style="color: #fff;">転生する</div>
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- ステージ10クリアお祝い / 周回用モーダル -->
+    <div class="modal" id="clear-modal">
+        <div class="modal-content">
+            <div class="modal-title" id="modal-title">🎉 STAGE 10 クリア！</div>
+            <div class="modal-desc" id="modal-desc">魔神を完全討伐しました！ここから先はさらに敵が強力になりますが、限界を超えたインフレを楽しめます。</div>
+            <button class="modal-btn" onclick="closeModal()">次へ進む</button>
+        </div>
+    </div>
+
     <script>
-        // --- ゲーム状態変数 ---
-        let gold = 0;
-        let portalPt = parseInt(localStorage.getItem('ma_total_points')) || 0;
-        let stage = 1;
+        // --- Web Audio API (SE生成エンジン) ---
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // 打撃音 (ピュッ・パンッ)
+        function playHitSound() {
+            try {
+                initAudio();
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } catch(e){}
+        }
+
+        // 撃破・クリア音 (ファミコン風ファンファーレ)
+        function playClearSound() {
+            try {
+                initAudio();
+                let notes = [523.25, 659.25, 783.99, 1046.50]; // ド, ミ, ソ, 高いド
+                notes.forEach((freq, i) => {
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.08);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime + i * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.08 + 0.15);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(audioCtx.currentTime + i * 0.08);
+                    osc.stop(audioCtx.currentTime + i * 0.08 + 0.15);
+                });
+            } catch(e){}
+        }
+
+        // 転生音 (高揚感のある上昇音)
+        function playPrestigeSound() {
+            try {
+                initAudio();
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            } catch(e){}
+        }
+
+        // --- ゲーム状態変数（localStorage自動セーブ対応） ---
+        let gold = parseInt(localStorage.getItem('just_kill_gold')) || 0;
+        let prestigeCount = parseInt(localStorage.getItem('just_kill_prestige')) || 0;
+        let stage = parseInt(localStorage.getItem('just_kill_stage')) || 1;
         
-        let bossMaxHp = 100;
-        let bossHp = 100;
+        let bossMaxHp = parseFloat(localStorage.getItem('just_kill_maxhp')) || 100;
+        let bossHp = parseFloat(localStorage.getItem('just_kill_hp')) || 100;
+
+        let clickPower = parseInt(localStorage.getItem('just_kill_clickpow')) || 1;
+        let clickLevel = parseInt(localStorage.getItem('just_kill_clicklvl')) || 1;
+        let clickCost = parseInt(localStorage.getItem('just_kill_clickcost')) || 10;
+
+        let autoCount = parseInt(localStorage.getItem('just_kill_autocnt')) || 0;
+        let autoLevel = parseInt(localStorage.getItem('just_kill_autolvl')) || 0;
+        let autoCost = parseInt(localStorage.getItem('just_kill_autocost')) || 50;
+
+        // 転生倍率 (1回につき +1倍)
+        let multiplier = 1 + (prestigeCount * 1.5);
+
         let bossNameList = ["理不尽な課題", "エラーコードの群れ", "寝坊の魔神", "単位の亡霊", "最終魔神 ﾏｰ・デストロイヤー"];
 
-        // 強化関連
-        let clickPower = 1;
-        let clickLevel = 1;
-        let clickCost = 10;
+        function saveData() {
+            localStorage.setItem('just_kill_gold', gold);
+            localStorage.setItem('just_kill_prestige', prestigeCount);
+            localStorage.setItem('just_kill_stage', stage);
+            localStorage.setItem('just_kill_maxhp', bossMaxHp);
+            localStorage.setItem('just_kill_hp', bossHp);
+            localStorage.setItem('just_kill_clickpow', clickPower);
+            localStorage.setItem('just_kill_clicklvl', clickLevel);
+            localStorage.setItem('just_kill_clickcost', clickCost);
+            localStorage.setItem('just_kill_autocnt', autoCount);
+            localStorage.setItem('just_kill_autolvl', autoLevel);
+            localStorage.setItem('just_kill_autocost', autoCost);
+        }
 
-        let autoCount = 0;
-        let autoLevel = 0;
-        let autoCost = 50;
-
-        // --- 初期化表示更新 ---
+        // --- 画面表示更新 ---
         function updateDisplay() {
             document.getElementById('gold-display').innerText = formatNum(gold);
-            document.getElementById('portal-pt-display').innerText = formatNum(portalPt);
+            document.getElementById('prestige-display').innerText = prestigeCount;
             document.getElementById('stage-num').innerText = stage;
             document.getElementById('boss-name').innerText = getBossName();
+            document.getElementById('multiplier-display').innerText = multiplier.toFixed(1);
             
             let hpPer = Math.max(0, (bossHp / bossMaxHp) * 100);
             document.getElementById('hp-bar').style.width = hpPer + '%';
@@ -297,6 +465,14 @@
             document.getElementById('lvl-auto').innerText = autoLevel;
             document.getElementById('cost-auto').innerText = formatNum(autoCost) + ' G';
             document.getElementById('btn-auto-up').disabled = gold < autoCost;
+
+            // ステージ10以上で転生解放
+            let prestigeBtn = document.getElementById('btn-prestige');
+            if (stage >= 10 || prestigeCount > 0) {
+                prestigeBtn.disabled = false;
+            } else {
+                prestigeBtn.disabled = true;
+            }
         }
 
         function getBossName() {
@@ -306,6 +482,7 @@
         }
 
         function formatNum(num) {
+            if (num >= 1e15) return (num / 1e15).toFixed(2) + '京';
             if (num >= 1e12) return (num / 1e12).toFixed(2) + '兆';
             if (num >= 1e8) return (num / 1e8).toFixed(2) + '億';
             if (num >= 1e4) return (num / 1e4).toFixed(1) + '万';
@@ -315,12 +492,14 @@
         // --- ダメージ処理 ---
         function dealDamage(amount, x, y) {
             bossHp -= amount;
+            playHitSound();
             showDamagePopup(amount, x, y);
 
             if (bossHp <= 0) {
                 defeatBoss();
             }
             updateDisplay();
+            saveData();
         }
 
         // --- ボス直接タップ ---
@@ -328,7 +507,7 @@
             let rect = e.target.getBoundingClientRect();
             let x = rect.left + rect.width / 2;
             let y = rect.top;
-            dealDamage(clickPower, x, y);
+            dealDamage(clickPower * multiplier, x, y);
         }
 
         // --- ダメージ数字のエフェクト ---
@@ -338,30 +517,66 @@
             el.className = 'dmg-popup';
             el.innerText = '-' + formatNum(amount);
             
-            // タップ位置周辺にランダムに散らす
-            let rx = (x || (window.innerWidth / 2)) + (Math.random() * 60 - 30);
-            let ry = (y || (window.innerHeight / 2)) + (Math.random() * 40 - 20);
+            let rx = (x || (window.innerWidth / 2)) + (Math.random() * 50 - 25);
+            let ry = (y || (window.innerHeight / 2)) + (Math.random() * 30 - 15);
             
             el.style.left = rx + 'px';
             el.style.top = ry + 'px';
             main.appendChild(el);
 
-            setTimeout(() => el.remove(), 600);
+            setTimeout(() => el.remove(), 500);
         }
 
-        // --- ボス撃破 ---
+        // --- ボス撃破 & クリア判定 ---
         function defeatBoss() {
-            let reward = Math.floor(bossMaxHp * 0.8) + 10;
+            playClearSound();
+            let reward = Math.floor(bossMaxHp * 0.75 * multiplier) + 20;
             gold += reward;
             
-            // ポータル用ポイントも少し加算 (1撃破につきステージ数×2 pt)
-            let ptReward = stage * 2;
-            portalPt += ptReward;
-            localStorage.setItem('ma_total_points', portalPt);
+            // ステージ10クリア時の特別な演出
+            if (stage === 10) {
+                showModal("🎉 STAGE 10 突破！", "お見事！最初の難関であるステージ10をクリアしました！ここから敵のHPとゴールドが爆発的にインフレします。さらに「ﾏｰ転生」が解禁されました！");
+            } else if (stage % 10 === 0) {
+                showModal(`🏆 STAGE ${stage} クリア！`, `素晴らしい討伐スピードです！次なる魔神が待ち受けています。`);
+            }
 
             stage++;
-            bossMaxHp = Math.floor(bossMaxHp * 1.5) + 50;
+            bossMaxHp = Math.floor(bossMaxHp * 2.2) + 100;
             bossHp = bossMaxHp;
+        }
+
+        function showModal(title, desc) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = desc;
+            document.getElementById('clear-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('clear-modal').style.display = 'none';
+        }
+
+        // --- 転生（プレステージ）処理 ---
+        function doPrestige() {
+            if (stage < 10 && prestigeCount === 0) return;
+            if (confirm("【確認】ﾏｰ転生を行いますか？\n所持金、レベル、ステージがリセットされますが、獲得ゴールドの倍率が永続的にアップします！")) {
+                playPrestigeSound();
+                prestigeCount++;
+                gold = 0;
+                stage = 1;
+                bossMaxHp = 100;
+                bossHp = 100;
+                clickPower = 1;
+                clickLevel = 1;
+                clickCost = 10;
+                autoCount = 0;
+                autoLevel = 0;
+                autoCost = 50;
+                multiplier = 1 + (prestigeCount * 1.5);
+                
+                saveData();
+                updateDisplay();
+                alert(`転生完了！ 獲得倍率が x${multiplier.Info ? '' : multiplier.toFixed(1)} にアップしました！`);
+            }
         }
 
         // --- アップグレード購入 ---
@@ -369,9 +584,10 @@
             if (gold >= clickCost) {
                 gold -= clickCost;
                 clickLevel++;
-                clickPower = Math.floor(clickPower * 1.3) + 1;
-                clickCost = Math.floor(clickCost * 1.4);
+                clickPower = Math.floor(clickPower * 1.35) + 1;
+                clickCost = Math.floor(clickCost * 1.45);
                 updateDisplay();
+                saveData();
             }
         }
 
@@ -382,22 +598,19 @@
                 autoCount++;
                 autoCost = Math.floor(autoCost * 1.5);
                 updateDisplay();
+                saveData();
             }
         }
 
         // --- 自動攻撃ユニット（ﾏｰたち）の描画と移動 ---
         let units = [];
         function initUnits() {
-            // 最大20体まで画面内を走らせる
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 25; i++) {
                 units.push({
                     x: Math.random() * window.innerWidth,
-                    y: window.innerHeight + 50,
-                    targetX: 0,
-                    targetY: 0,
-                    speed: 2 + Math.random() * 3,
+                    y: window.innerHeight + 40,
+                    speed: 3 + Math.random() * 3,
                     face: Math.random() > 0.5 ? '( ' + 'ω' + ' )ﾏｰ' : '(ﾉД`)ﾏｰ',
-                    state: 'wait'
                 });
             }
         }
@@ -411,24 +624,19 @@
             let bX = bossRect.left + bossRect.width / 2;
             let bY = bossRect.top + bossRect.height / 2;
 
-            // 稼働しているオートユニット数に応じて描画
-            let activeUnits = Math.min(units.length, autoCount * 3); // 1レベルにつき3体増える
+            let activeUnits = Math.min(units.length, autoCount * 3);
 
             for (let i = 0; i < activeUnits; i++) {
                 let u = units[i];
-                
-                // 簡易的な移動ロジック
                 let dx = bX - u.x;
                 let dy = bY - u.y;
                 let dist = Math.sqrt(dx*dx + dy*dy);
 
-                if (dist < 50) {
-                    // ボスにヒット！ダメージを与える
-                    let dpsDmg = Math.max(1, Math.floor(clickPower * 0.3));
+                if (dist < 45) {
+                    let dpsDmg = Math.max(1, Math.floor(clickPower * 0.3 * multiplier));
                     dealDamage(dpsDmg, bX, bY);
-                    // 弾き飛ばされる
                     u.x = Math.random() * window.innerWidth;
-                    u.y = window.innerHeight + 50;
+                    u.y = window.innerHeight + 40;
                 } else {
                     u.x += (dx / dist) * u.speed;
                     u.y += (dy / dist) * u.speed;
@@ -449,7 +657,6 @@
             if (autoCount > 0) {
                 updateUnits();
             }
-            updateDisplay();
         }, 33);
 
         // 初回描画
