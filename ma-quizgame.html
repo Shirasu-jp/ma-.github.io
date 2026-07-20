@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>クイズﾏｰ</title>
+    <style>
+        body {
+            background-color: #0d0d1a;
+            color: #fff;
+            font-family: sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 40px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #1a1a2e;
+            border: 2px solid #00f0ff;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+        }
+        h1 {
+            color: #00f0ff;
+            margin-bottom: 10px;
+        }
+        .streak {
+            font-size: 18px;
+            color: #ffaa00;
+            margin-bottom: 25px;
+        }
+        .question-box {
+            font-size: 22px;
+            margin: 30px 0;
+            background: #121222;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px dashed #ff3366;
+            word-break: break-all;
+        }
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        button {
+            font-size: 20px;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        #yes-btn {
+            background-color: #00ff66;
+            color: #000;
+        }
+        #yes-btn:hover { background-color: #00cc52; }
+        #no-btn {
+            background-color: #ff3366;
+            color: #fff;
+        }
+        #no-btn:hover { background-color: #cc2952; }
+        #result-msg {
+            margin-top: 20px;
+            font-size: 18px;
+            height: 30px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>クイズﾏｰ</h1>
+        <div class="streak">連続正解回数: <span id="streak-count">0</span>回</div>
+        
+        <div class="question-box" id="question-text">
+            読み込み中...
+        </div>
+
+        <div class="btn-group">
+            <button id="yes-btn" onclick="answer(true)">はい (YES)</button>
+            <button id="no-btn" onclick="answer(false)">いいえ (NO)</button>
+        </div>
+
+        <div id="result-msg"></div>
+    </div>
+
+    <script>
+        const items = ['(´ω`)ﾏｰ', '🐑ﾒｰ', '🐏ﾒｰ', '☁ ﾒｰ'];
+        let streak = 0;
+        let currentLeft = 0;
+        let currentRight = 0;
+        let isAnswered = false;
+
+        function nextQuestion() {
+            isAnswered = false;
+            document.getElementById('result-msg').innerText = '';
+            
+            // 4×4の全16通りから完全ランダムで抽出
+            currentLeft = Math.floor(Math.random() * items.length);
+            currentRight = Math.floor(Math.random() * items.length);
+
+            const qText = `「${items[currentLeft]}」 は 「${items[currentRight]}」 でしょうか？`;
+            document.getElementById('question-text').innerText = qText;
+        }
+
+        function answer(userSaysYes) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const isActuallyEqual = (currentLeft === currentRight);
+            const isCorrect = (userSaysYes === isActuallyEqual);
+
+            const msgEl = document.getElementById('result-msg');
+            const streakEl = document.getElementById('streak-count');
+
+            if (isCorrect) {
+                streak++;
+                streakEl.innerText = streak;
+                msgEl.style.color = '#00ff66';
+                msgEl.innerText = '正解！✨';
+            } else {
+                msgEl.style.color = '#ff3366';
+                msgEl.innerText = `不正解…！（正解は ${isActuallyEqual ? 'はい' : 'いいえ'}） 記録リセット！`;
+                streak = 0;
+                streakEl.innerText = streak;
+            }
+
+            setTimeout(nextQuestion, 1200);
+        }
+
+        // 初回実行
+        nextQuestion();
+    </script>
+</body>
+</html>
