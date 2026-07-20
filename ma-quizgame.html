@@ -95,6 +95,60 @@
         let currentRight = 0;
         let isAnswered = false;
 
+        // --- Web Audio API による効果音生成 ---
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // 正解音（ピロリーン♪：高めの心地いい2音）
+        function playCorrectSound() {
+            initAudio();
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, now); // D5
+            osc.frequency.setValueAtTime(880, now + 0.1); // A5
+
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.3);
+        }
+
+        // 不正解音（ブーッ！：低めの濁った音）
+        function playWrongSound() {
+            initAudio();
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.setValueAtTime(100, now + 0.15);
+
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.3);
+        }
+        ------------------------------------
+
         function nextQuestion() {
             isAnswered = false;
             document.getElementById('result-msg').innerText = '';
@@ -118,11 +172,13 @@
             const streakEl = document.getElementById('streak-count');
 
             if (isCorrect) {
+                playCorrectSound(); // 正解音
                 streak++;
                 streakEl.innerText = streak;
                 msgEl.style.color = '#00ff66';
                 msgEl.innerText = '正解！✨';
             } else {
+                playWrongSound(); // 不正解音
                 msgEl.style.color = '#ff3366';
                 msgEl.innerText = `不正解…！（正解は ${isActuallyEqual ? 'はい' : 'いいえ'}） 記録リセット！`;
                 streak = 0;
