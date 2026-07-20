@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ﾏｰの無限狩りMMO</title>
+    <title>ﾏｰの無限狩りMMO - ステ振り版</title>
     <style>
         body {
             background-color: #111;
@@ -11,8 +11,8 @@
             text-align: center;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* 画面スクロール防止 */
-            user-select: none; /* テキスト選択防止 */
+            overflow: hidden;
+            user-select: none;
         }
         #game-container {
             max-width: 600px;
@@ -25,29 +25,30 @@
             background-color: #1a1a2e;
             position: relative;
         }
+        
         /* --- プレイヤーエリア --- */
         #player-zone {
-            padding: 20px;
+            padding: 15px;
             background: linear-gradient(to bottom, #2b1055, #1a1a2e);
             border-bottom: 2px solid #ff007f;
         }
         #player-name {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
             color: #00f0ff;
             margin-bottom: 5px;
             text-shadow: 0 0 10px #00f0ff;
         }
-        #player-stats {
-            font-size: 18px;
+        #player-stats-basic {
+            font-size: 16px;
             color: #ffaa00;
         }
         .exp-bar-bg {
             width: 100%;
-            height: 15px;
+            height: 12px;
             background-color: #222;
             border-radius: 10px;
-            margin-top: 10px;
+            margin-top: 8px;
             border: 1px solid #555;
             overflow: hidden;
         }
@@ -58,7 +59,52 @@
             transition: width 0.1s;
         }
 
-        /* --- 敵エリア（クリッカブル） --- */
+        /* --- ステータス振り分けパネル --- */
+        #status-panel {
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 1px solid #00f0ff;
+            border-radius: 8px;
+            margin-top: 10px;
+            padding: 10px;
+        }
+        .stat-header {
+            font-size: 14px;
+            color: #00f0ff;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 13px;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 4px 8px;
+            border-radius: 5px;
+        }
+        .btn-add {
+            background-color: #00ff66;
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            padding: 2px 8px;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .btn-add:hover { background-color: #00cc52; }
+        .btn-add:disabled {
+            background-color: #444;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        /* --- 敵エリア --- */
         #enemy-zone {
             flex-grow: 1;
             display: flex;
@@ -72,23 +118,23 @@
             transform: scale(0.9);
         }
         #enemy-name {
-            font-size: 24px;
+            font-size: 22px;
             color: #ff3366;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             text-shadow: 0 0 5px #ff3366;
         }
         #enemy-sprite {
-            font-size: 120px;
+            font-size: 110px;
             transition: transform 0.05s;
             filter: drop-shadow(0 0 15px rgba(255,51,102,0.5));
         }
         .hp-bar-bg {
             width: 60%;
-            height: 20px;
+            height: 18px;
             background-color: #333;
             border-radius: 10px;
-            margin-top: 20px;
+            margin-top: 15px;
             border: 2px solid #000;
             overflow: hidden;
             position: relative;
@@ -101,55 +147,51 @@
         }
         #hp-text {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            line-height: 20px;
-            font-size: 14px;
+            top: 0; left: 0; width: 100%; height: 100%;
+            line-height: 18px;
+            font-size: 12px;
             font-weight: bold;
             color: white;
             text-shadow: 1px 1px 2px black;
         }
 
-        /* --- MMO風ログエリア --- */
+        /* --- ログエリア --- */
         #log-zone {
-            height: 120px;
-            background-color: rgba(0, 0, 0, 0.8);
+            height: 110px;
+            background-color: rgba(0, 0, 0, 0.85);
             border-top: 2px solid #555;
             text-align: left;
-            padding: 10px;
-            font-size: 14px;
+            padding: 8px;
+            font-size: 13px;
             overflow-y: auto;
             color: #ccc;
             font-family: monospace;
         }
         .log-sys { color: #00f0ff; }
-        .log-dmg { color: #ffaa00; }
         .log-kill { color: #ff3366; }
         .log-lvl { color: #00ff66; font-weight: bold; }
+        .log-stat { color: #ffaa00; }
 
         /* --- UIボタン --- */
         #ui-controls {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 10px; right: 10px;
         }
-        button {
+        .btn-reset {
             background-color: #333;
             color: #fff;
             border: 1px solid #777;
-            padding: 5px 10px;
+            padding: 4px 8px;
             border-radius: 5px;
             cursor: pointer;
+            font-size: 12px;
         }
-        button:hover { background-color: #555; }
 
-        /* --- フローティングダメージ --- */
+        /* --- ダメージテキスト --- */
         .damage-text {
             position: absolute;
             color: #fff;
-            font-size: 28px;
+            font-size: 26px;
             font-weight: bold;
             text-shadow: 0 0 5px #ff0000, 2px 2px 0 #000;
             pointer-events: none;
@@ -167,23 +209,48 @@
 
 <div id="game-container">
     <div id="ui-controls">
-        <button onclick="resetData()">データリセット</button>
+        <button class="btn-reset" onclick="resetData()">データ重置</button>
     </div>
 
     <!-- プレイヤーエリア -->
     <div id="player-zone">
         <div id="player-name">(´ω`)ﾏｰ</div>
-        <div id="player-stats">
-            Lv: <span id="val-level">1</span> | 
-            攻撃力: <span id="val-damage">1</span>
+        <div id="player-stats-basic">
+            Lv: <span id="val-level">1</span>
         </div>
+        
         <div class="exp-bar-bg">
             <div id="exp-bar-fill"></div>
+        </div>
+
+        <!-- ステータス割り振りパネル -->
+        <div id="status-panel">
+            <div class="stat-header">
+                未使用ポイント: <span id="val-pt" style="color:#00ff66; font-size:16px;">0</span> pt
+            </div>
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <span>攻撃力 (STR): <b id="val-str">1</b></span>
+                    <button class="btn-add" onclick="addStat('str')">＋</button>
+                </div>
+                <div class="stat-item">
+                    <span>会心率 (CRIT): <b id="val-crit">5</b>%</span>
+                    <button class="btn-add" onclick="addStat('crit')">＋</button>
+                </div>
+                <div class="stat-item">
+                    <span>会心倍率 (CDMG): <b id="val-cdmg">1.5</b>倍</span>
+                    <button class="btn-add" onclick="addStat('cdmg')">＋</button>
+                </div>
+                <div class="stat-item">
+                    <span>自動攻撃 (AUTO): <b id="val-auto">0</b>/s</span>
+                    <button class="btn-add" onclick="addStat('auto')">＋</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- 敵エリア -->
-    <div id="enemy-zone" onmousedown="attack(event)" ontouchstart="attack(event)">
+    <div id="enemy-zone" onmousedown="clickAttack(event)" ontouchstart="clickAttack(event)">
         <div id="enemy-name">謎の羊</div>
         <div id="enemy-sprite">🐏</div>
         <div class="hp-bar-bg">
@@ -192,20 +259,19 @@
         </div>
     </div>
 
-    <!-- MMO風システムログ -->
+    <!-- システムログ -->
     <div id="log-zone">
-        <div>[System] ﾏｰのMMO世界へようこそ！画面中央をタップして狩りを始めよう。</div>
+        <div>[System] ﾏｰのMMO世界へようこそ！レベルを上げてポイントで強化しよう。</div>
     </div>
 </div>
 
 <script>
-    // --- 音声生成 (Web Audio API) ---
+    // --- Web Audio API（リアル羊サウンド対応） ---
     let audioCtx = null;
     function initAudio() {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
 
-    // 打撃音（短いノイズのような音）
     function playHitSound() {
         if (!audioCtx) return;
         const now = audioCtx.currentTime;
@@ -213,66 +279,81 @@
         const gain = audioCtx.createGain();
         osc.type = 'square';
         osc.frequency.setValueAtTime(150, now);
-        osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.08);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start(now);
-        osc.stop(now + 0.1);
+        osc.stop(now + 0.08);
     }
 
-    // 羊撃破音（メェーっぽい低音の揺らぎ）
+    // リアルな羊の鳴き声（ビブラート＋フィルター合成）
     function playDefeatSound() {
         if (!audioCtx) return;
         const now = audioCtx.currentTime;
+
         const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
         osc.type = 'sawtooth';
-        
-        // メェーという揺らぎ（周波数を少し上下させる）
-        osc.frequency.setValueAtTime(120, now);
-        osc.frequency.linearRampToValueAtTime(130, now + 0.1);
-        osc.frequency.linearRampToValueAtTime(110, now + 0.2);
-        osc.frequency.linearRampToValueAtTime(120, now + 0.3);
-        osc.frequency.linearRampToValueAtTime(90, now + 0.5);
+        osc.frequency.setValueAtTime(180, now);
 
+        // ビブラート（波打つ鳴き声）
+        const lfo = audioCtx.createOscillator();
+        lfo.frequency.setValueAtTime(7, now);
+        const lfoGain = audioCtx.createGain();
+        lfoGain.gain.setValueAtTime(20, now);
+        lfo.connect(osc.frequency);
+
+        // 口の響き（バンドパスフィルター）
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(850, now);
+        filter.Q.setValueAtTime(3, now);
+
+        const gain = audioCtx.createGain();
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.3, now + 0.1);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+        gain.gain.linearRampToValueAtTime(0.25, now + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
 
-        osc.connect(gain);
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(audioCtx.destination);
+
+        lfo.start(now);
         osc.start(now);
-        osc.stop(now + 0.6);
+        lfo.stop(now + 0.5);
+        osc.stop(now + 0.5);
     }
 
-    // レベルアップ音（ファンファーレ風）
     function playLevelUpSound() {
         if (!audioCtx) return;
         const now = audioCtx.currentTime;
-        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        const notes = [523.25, 659.25, 783.99, 1046.50];
         notes.forEach((freq, index) => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sine';
             osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0, now + index * 0.1);
-            gain.gain.linearRampToValueAtTime(0.2, now + index * 0.1 + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.1 + 0.4);
+            gain.gain.setValueAtTime(0, now + index * 0.08);
+            gain.gain.linearRampToValueAtTime(0.2, now + index * 0.08 + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.08 + 0.3);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.start(now + index * 0.1);
-            osc.stop(now + index * 0.1 + 0.5);
+            osc.start(now + index * 0.08);
+            osc.stop(now + index * 0.08 + 0.4);
         });
     }
 
-    // --- ゲームデータと設定 ---
+    // --- プレイヤー＆ゲームデータ ---
     let player = {
         level: 1,
         exp: 0,
         expNext: 10,
-        damage: 1,
+        pts: 0,         // 未割り振りポイント
+        str: 1,         // 攻撃力 (STR)
+        critRate: 5,    // 会心率 (%)
+        critMult: 1.5,  // 会心倍率
+        autoDmg: 0,     // 自動攻撃力
         killCount: 0
     };
 
@@ -283,13 +364,11 @@
         emoji: "🐏"
     };
 
-    // 敵の名前ランダムジェネレーター
     const enemyEmojis = ["🐏", "🐑", "☁"];
     const prefixes = ["狂乱の", "暗黒", "神聖なる", "鋼鉄の", "見習い", "灼熱の", "次元の", "虚無の", "野生の", "伝説の", "呪われた", "覚醒した"];
     const nouns = ["ウール", "もふもふ", "角獣", "クラウド", "羊毛", "シープ", "メーメー", "魔獣", "精霊", "綿あめ"];
     const suffixes = ["", "・改", "キング", "Lv.99", " (偽)", "の化身", "・極", "神", "エース", "もどき"];
 
-    // ﾏｰの進化リスト
     const evolutions = [
         { lv: 1, face: "(´ω`)ﾏｰ" },
         { lv: 5, face: "(｀・ω・´)ﾏｰ" },
@@ -301,30 +380,57 @@
         { lv: 100, face: "🌌( ˘ω˘ )ﾏｰ🌌 [神]" }
     ];
 
-    // --- セーブ＆ロード処理 ---
-    const SAVE_KEY = 'mar_mmo_save';
+    // --- セーブ/ロード ---
+    const SAVE_KEY = 'mar_mmo_stat_save';
     function saveGame() {
         localStorage.setItem(SAVE_KEY, JSON.stringify(player));
     }
     function loadGame() {
         const saved = localStorage.getItem(SAVE_KEY);
         if (saved) {
-            player = JSON.parse(saved);
+            const data = JSON.parse(saved);
+            player = { ...player, ...data }; // 新しいパラメータを追加しても壊れないように統合
             updatePlayerFace();
             updateUI();
             addLog(`<span class="log-sys">[System] セーブデータをロードしました（Lv.${player.level}）</span>`);
         }
     }
     function resetData() {
-        if(confirm("本当にデータをリセットして最初からやり直しますか？")) {
+        if(confirm("データをリセットして最初からやり直しますか？")) {
             localStorage.removeItem(SAVE_KEY);
             location.reload();
         }
     }
 
-    // --- ゲームロジック ---
+    // --- ステータス振り分け ---
+    function addStat(type) {
+        if (player.pts <= 0) return;
+
+        if (type === 'str') {
+            player.str += 1;
+            addLog(`<span class="log-stat">[強化] 攻撃力(STR) が ${player.str} に上昇！</span>`);
+        } else if (type === 'crit') {
+            if (player.critRate >= 75) {
+                alert("会心率は75%が上限です！");
+                return;
+            }
+            player.critRate += 1;
+            addLog(`<span class="log-stat">[強化] 会心率(CRIT) が ${player.critRate}% に上昇！</span>`);
+        } else if (type === 'cdmg') {
+            player.critMult = parseFloat((player.critMult + 0.1).toFixed(1));
+            addLog(`<span class="log-stat">[強化] 会心倍率(CDMG) が ${player.critMult}倍 に上昇！</span>`);
+        } else if (type === 'auto') {
+            player.autoDmg += 1;
+            addLog(`<span class="log-stat">[強化] 自動攻撃(AUTO) が ${player.autoDmg}/s に上昇！</span>`);
+        }
+
+        player.pts--;
+        updateUI();
+        saveGame();
+    }
+
+    // --- ゲームの挙動 ---
     function generateEnemy() {
-        // レベルに合わせてHPがインフレ
         enemy.maxHp = Math.floor(10 * Math.pow(1.15, player.level - 1));
         enemy.hp = enemy.maxHp;
         
@@ -338,22 +444,29 @@
         document.getElementById('enemy-name').innerText = enemy.name;
         
         updateEnemyUI();
-        addLog(`<span class="log-sys">[System] <strong>${enemy.name}</strong> が出現した！</span>`);
+        addLog(`<span class="log-sys">[System] <strong>${enemy.name}</strong> が出現！</span>`);
     }
 
-    function attack(e) {
-        initAudio(); // 最初のクリックでオーディオ解禁
-        
-        // ダメージ計算（クリティカル実装：10%の確率で2倍）
-        let isCrit = Math.random() < 0.1;
-        let finalDamage = player.damage;
-        if (isCrit) finalDamage *= 2;
+    function clickAttack(e) {
+        initAudio();
+        dealDamage(player.str, e);
+    }
+
+    function dealDamage(baseDmg, e = null) {
+        if (enemy.hp <= 0) return;
+
+        let isCrit = (Math.random() * 100) < player.critRate;
+        let finalDamage = baseDmg;
+        if (isCrit) {
+            finalDamage = Math.floor(finalDamage * player.critMult);
+        }
+        if (finalDamage < 1) finalDamage = 1;
 
         enemy.hp -= finalDamage;
         if (enemy.hp < 0) enemy.hp = 0;
 
         playHitSound();
-        showDamageText(e, finalDamage, isCrit);
+        if (e) showDamageText(e, finalDamage, isCrit);
         updateEnemyUI();
 
         if (enemy.hp === 0) {
@@ -365,17 +478,15 @@
         playDefeatSound();
         player.killCount++;
         
-        // 経験値獲得（敵の最大HPの約20%〜30%）
         let expGained = Math.floor(enemy.maxHp * (0.2 + Math.random() * 0.1));
         if (expGained < 1) expGained = 1;
         
         player.exp += expGained;
-        addLog(`<span class="log-kill">[Battle] ${enemy.name} を討伐！ Exp +${expGained}</span>`);
+        addLog(`<span class="log-kill">[Battle] ${enemy.name} を撃破！ Exp +${expGained}</span>`);
 
         checkLevelUp();
         saveGame();
         
-        // 敵が死んだら少し遅れて次を生成
         document.getElementById('enemy-sprite').style.opacity = '0';
         setTimeout(() => {
             generateEnemy();
@@ -388,15 +499,14 @@
         while (player.exp >= player.expNext) {
             player.exp -= player.expNext;
             player.level++;
-            // 次の必要経験値とダメージがインフレ
             player.expNext = Math.floor(player.expNext * 1.3);
-            player.damage = Math.floor(player.level * 1.5) + Math.floor(Math.pow(1.05, player.level));
+            player.pts += 3; // レベルアップで3pt獲得！
             leveledUp = true;
         }
 
         if (leveledUp) {
             playLevelUpSound();
-            addLog(`<span class="log-lvl">[World] ﾏｰが レベル ${player.level} にアップ！攻撃力が ${player.damage} になった！</span>`);
+            addLog(`<span class="log-lvl">[LEVEL UP!] レベル ${player.level} にアップ！ ステータスポイントを 獲得！</span>`);
             updatePlayerFace();
         }
         updateUI();
@@ -412,15 +522,32 @@
         const nameEl = document.getElementById('player-name');
         if (nameEl.innerText !== currentFace) {
             nameEl.innerText = currentFace;
-            addLog(`<span class="log-lvl">[進化] ﾏｰの姿が変化した！『${currentFace}』</span>`);
+            addLog(`<span class="log-lvl">[進化] ﾏｰが『${currentFace}』に進化！</span>`);
         }
     }
 
-    // --- UI更新・エフェクト処理 ---
+    // 1秒ごとの自動攻撃ループ
+    setInterval(() => {
+        if (player.autoDmg > 0 && enemy.hp > 0) {
+            dealDamage(player.autoDmg);
+        }
+    }, 1000);
+
+    // --- UI更新 ---
     function updateUI() {
         document.getElementById('val-level').innerText = player.level;
-        document.getElementById('val-damage').innerText = player.damage;
-        
+        document.getElementById('val-pt').innerText = player.pts;
+        document.getElementById('val-str').innerText = player.str;
+        document.getElementById('val-crit').innerText = player.critRate;
+        document.getElementById('val-cdmg').innerText = player.critMult;
+        document.getElementById('val-auto').innerText = player.autoDmg;
+
+        // ポイントが無ければ「＋」ボタンを無効化
+        const btns = document.querySelectorAll('.btn-add');
+        btns.forEach(btn => {
+            btn.disabled = (player.pts <= 0);
+        });
+
         let expPercent = (player.exp / player.expNext) * 100;
         document.getElementById('exp-bar-fill').style.width = `${expPercent}%`;
     }
@@ -438,7 +565,6 @@
         logZone.appendChild(div);
         logZone.scrollTop = logZone.scrollHeight;
         
-        // ログが増えすぎたら消す
         if (logZone.childNodes.length > 50) {
             logZone.removeChild(logZone.firstChild);
         }
@@ -452,34 +578,31 @@
         if (isCrit) {
             dmgText.innerText = `CRITICAL! ${dmg}`;
             dmgText.style.color = '#ffaa00';
-            dmgText.style.fontSize = '36px';
+            dmgText.style.fontSize = '34px';
         } else {
             dmgText.innerText = dmg;
         }
 
-        // クリック位置か、タッチ位置を取得（コンテナ相対座標にする）
         const rect = gameContainer.getBoundingClientRect();
         let clientX = e.clientX || (e.touches && e.touches[0].clientX);
         let clientY = e.clientY || (e.touches && e.touches[0].clientY);
         
-        // もし座標が取れなければ中央に出す
         if (!clientX) {
             clientX = rect.left + rect.width / 2;
             clientY = rect.top + rect.height / 2;
         }
 
-        dmgText.style.left = `${clientX - rect.left - 20 + (Math.random()*40-20)}px`;
-        dmgText.style.top = `${clientY - rect.top - 20 + (Math.random()*40-20)}px`;
+        dmgText.style.left = `${clientX - rect.left - 20 + (Math.random()*30-15)}px`;
+        dmgText.style.top = `${clientY - rect.top - 20 + (Math.random()*30-15)}px`;
         
         gameContainer.appendChild(dmgText);
         
-        // アニメーション完了後に削除
         setTimeout(() => {
             if(dmgText.parentNode) dmgText.parentNode.removeChild(dmgText);
         }, 800);
     }
 
-    // --- 初期化 ---
+    // 初期化
     window.onload = () => {
         loadGame();
         generateEnemy();
@@ -487,9 +610,7 @@
         updatePlayerFace();
     };
 
-    // 自動セーブ（10秒に1回）
     setInterval(saveGame, 10000);
-
 </script>
 </body>
 </html>
