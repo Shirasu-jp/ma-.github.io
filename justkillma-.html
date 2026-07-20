@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔神をシバくのだ！ - MAR PORTAL</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0f0f1a;
+            color: #fff;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        /* ヘッダー */
+        header {
+            background: #1a1a2e;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e94560;
+            z-index: 10;
+        }
+        .back-btn {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .stats-container {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .stat-item span {
+            color: #ffd700;
+        }
+
+        /* メインゲーム画面 */
+        .game-main {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            background: radial-gradient(circle, #222244 0%, #0f0f1a 100%);
+        }
+
+        /* ボスエリア */
+        .boss-area {
+            text-align: center;
+            margin-top: 10px;
+            z-index: 5;
+        }
+        .stage-title {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+        .boss-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff4757;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255,71,87,0.5);
+        }
+        .hp-bar-container {
+            width: 300px;
+            height: 24px;
+            background: #333;
+            border: 2px solid #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        .hp-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4757, #ff6b81);
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+        .hp-text {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+        }
+        .boss-avatar {
+            font-size: 80px;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: transform 0.05s;
+            display: inline-block;
+        }
+        .boss-avatar:active {
+            transform: scale(0.9);
+        }
+
+        /* マイヤーたちが暴れるフィールド */
+        .battle-field {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 2;
+        }
+        .mar-unit {
+            position: absolute;
+            font-size: 24px;
+            transition: transform 0.5s linear;
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
+        }
+
+        /* ダメージポップアップ文字 */
+        .dmg-popup {
+            position: absolute;
+            font-weight: bold;
+            color: #ffd700;
+            font-size: 18px;
+            animation: floatUp 0.6s ease-out forwards;
+            pointer-events: none;
+            z-index: 20;
+            text-shadow: 1px 1px 0 #000;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.3); opacity: 0; }
+        }
+
+        /* 下部コントロール・ショップエリア */
+        .shop-panel {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(26, 26, 46, 0.95);
+            border: 2px solid #e94560;
+            border-radius: 15px;
+            padding: 15px;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .shop-title {
+            font-size: 14px;
+            color: #e94560;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        .upgrade-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .upgrade-btn {
+            background: #16213e;
+            border: 1px solid #0f3460;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .upgrade-btn:hover:not(:disabled) {
+            background: #0f3460;
+            border-color: #e94560;
+        }
+        .upgrade-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .upgrade-info div:first-child {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .upgrade-info div:last-child {
+            font-size: 11px;
+            color: #aaa;
+        }
+        .upgrade-cost {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-btn">⬅ ポータルへ戻る</a>
+        <div class="stats-container">
+            <div class="stat-item">💰 所持金: <span id="gold-display">0</span> G</div>
+            <div class="stat-item">⭐ 総ﾏｰPt: <span id="portal-pt-display">0</span> pt</div>
+        </div>
+    </header>
+
+    <div class="game-main" id="game-main">
+        <!-- バトルフィールド（ﾏｰが走り回る場所） -->
+        <div class="battle-field" id="battle-field"></div>
+
+        <!-- ボスエリア -->
+        <div class="boss-area">
+            <div class="stage-title">STAGE <span id="stage-num">1</span></div>
+            <div class="boss-name" id="boss-name">理不尽な課題</div>
+            <div class="hp-bar-container">
+                <div class="hp-bar" id="hp-bar"></div>
+                <div class="hp-text" id="hp-text">100 / 100</div>
+            </div>
+            <!-- ボスを直接タップしても攻撃できる -->
+            <div class="boss-avatar" id="boss-avatar" onclick="tapBoss(event)">( ˘ω˘ )</div>
+        </div>
+
+        <!-- ショップパネル -->
+        <div class="shop-panel">
+            <div class="shop-title">⚡ 強化・育成メニュー</div>
+            <div class="upgrade-list">
+                <button class="upgrade-btn" id="btn-click-up" onclick="buyClickPower()">
+                    <div class="upgrade-info">
+                        <div>ﾏｰパンチ強化 (Lv.<span id="lvl-click">1</span>)</div>
+                        <div>タップ時の攻撃力がアップ</div>
+                    </div>
+                    <div class="upgrade-cost" id="cost-click">10 G</div>
+                </button>
+                <button class="upgrade-btn" id="btn-auto-up" onclick="buyAutoUnit()">
+                    <div class="upgrade-info">
+                        <div>ﾏｰ増殖 (Lv.<span id="lvl-auto">0</span>)</div>
+                        <div>自動で突撃する仲間を増やす</div>
+                    </div>
+                    <div class="upgrade-cost" id="cost-auto">50 G</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ゲーム状態変数 ---
+        let gold = 0;
+        let portalPt = parseInt(localStorage.getItem('ma_total_points')) || 0;
+        let stage = 1;
+        
+        let bossMaxHp = 100;
+        let bossHp = 100;
+        let bossNameList = ["理不尽な課題", "エラーコードの群れ", "寝坊の魔神", "単位の亡霊", "最終魔神 ﾏｰ・デストロイヤー"];
+
+        // 強化関連
+        let clickPower = 1;
+        let clickLevel = 1;
+        let clickCost = 10;
+
+        let autoCount = 0;
+        let autoLevel = 0;
+        let autoCost = 50;
+
+        // --- 初期化表示更新 ---
+        function updateDisplay() {
+            document.getElementById('gold-display').innerText = formatNum(gold);
+            document.getElementById('portal-pt-display').innerText = formatNum(portalPt);
+            document.getElementById('stage-num').innerText = stage;
+            document.getElementById('boss-name').innerText = getBossName();
+            
+            let hpPer = Math.max(0, (bossHp / bossMaxHp) * 100);
+            document.getElementById('hp-bar').style.width = hpPer + '%';
+            document.getElementById('hp-text').innerText = `${formatNum(Math.ceil(bossHp))} / ${formatNum(bossMaxHp)}`;
+
+            document.getElementById('lvl-click').innerText = clickLevel;
+            document.getElementById('cost-click').innerText = formatNum(clickCost) + ' G';
+            document.getElementById('btn-click-up').disabled = gold < clickCost;
+
+            document.getElementById('lvl-auto').innerText = autoLevel;
+            document.getElementById('cost-auto').innerText = formatNum(autoCost) + ' G';
+            document.getElementById('btn-auto-up').disabled = gold < autoCost;
+        }
+
+        function getBossName() {
+            let index = (stage - 1) % bossNameList.length;
+            if (stage >= 10) return "真・魔神 ﾏｰ・オーバーロード";
+            return bossNameList[index];
+        }
+
+        function formatNum(num) {
+            if (num >= 1e12) return (num / 1e12).toFixed(2) + '兆';
+            if (num >= 1e8) return (num / 1e8).toFixed(2) + '億';
+            if (num >= 1e4) return (num / 1e4).toFixed(1) + '万';
+            return Math.floor(num).toLocaleString();
+        }
+
+        // --- ダメージ処理 ---
+        function dealDamage(amount, x, y) {
+            bossHp -= amount;
+            showDamagePopup(amount, x, y);
+
+            if (bossHp <= 0) {
+                defeatBoss();
+            }
+            updateDisplay();
+        }
+
+        // --- ボス直接タップ ---
+        function tapBoss(e) {
+            let rect = e.target.getBoundingClientRect();
+            let x = rect.left + rect.width / 2;
+            let y = rect.top;
+            dealDamage(clickPower, x, y);
+        }
+
+        // --- ダメージ数字のエフェクト ---
+        function showDamagePopup(amount, x, y) {
+            let main = document.getElementById('game-main');
+            let el = document.createElement('div');
+            el.className = 'dmg-popup';
+            el.innerText = '-' + formatNum(amount);
+            
+            // タップ位置周辺にランダムに散らす
+            let rx = (x || (window.innerWidth / 2)) + (Math.random() * 60 - 30);
+            let ry = (y || (window.innerHeight / 2)) + (Math.random() * 40 - 20);
+            
+            el.style.left = rx + 'px';
+            el.style.top = ry + 'px';
+            main.appendChild(el);
+
+            setTimeout(() => el.remove(), 600);
+        }
+
+        // --- ボス撃破 ---
+        function defeatBoss() {
+            let reward = Math.floor(bossMaxHp * 0.8) + 10;
+            gold += reward;
+            
+            // ポータル用ポイントも少し加算 (1撃破につきステージ数×2 pt)
+            let ptReward = stage * 2;
+            portalPt += ptReward;
+            localStorage.setItem('ma_total_points', portalPt);
+
+            stage++;
+            bossMaxHp = Math.floor(bossMaxHp * 1.5) + 50;
+            bossHp = bossMaxHp;
+        }
+
+        // --- アップグレード購入 ---
+        function buyClickPower() {
+            if (gold >= clickCost) {
+                gold -= clickCost;
+                clickLevel++;
+                clickPower = Math.floor(clickPower * 1.3) + 1;
+                clickCost = Math.floor(clickCost * 1.4);
+                updateDisplay();
+            }
+        }
+
+        function buyAutoUnit() {
+            if (gold >= autoCost) {
+                gold -= autoCost;
+                autoLevel++;
+                autoCount++;
+                autoCost = Math.floor(autoCost * 1.5);
+                updateDisplay();
+            }
+        }
+
+        // --- 自動攻撃ユニット（ﾏｰたち）の描画と移動 ---
+        let units = [];
+        function initUnits() {
+            // 最大20体まで画面内を走らせる
+            for (let i = 0; i < 20; i++) {
+                units.push({
+                    x: Math.random() * window.innerWidth,
+                    y: window.innerHeight + 50,
+                    targetX: 0,
+                    targetY: 0,
+                    speed: 2 + Math.random() * 3,
+                    face: Math.random() > 0.5 ? '( ' + 'ω' + ' )ﾏｰ' : '(ﾉД`)ﾏｰ',
+                    state: 'wait'
+                });
+            }
+        }
+
+        function updateUnits() {
+            let field = document.getElementById('battle-field');
+            field.innerHTML = '';
+
+            let bossAvatar = document.getElementById('boss-avatar');
+            let bossRect = bossAvatar.getBoundingClientRect();
+            let bX = bossRect.left + bossRect.width / 2;
+            let bY = bossRect.top + bossRect.height / 2;
+
+            // 稼働しているオートユニット数に応じて描画
+            let activeUnits = Math.min(units.length, autoCount * 3); // 1レベルにつき3体増える
+
+            for (let i = 0; i < activeUnits; i++) {
+                let u = units[i];
+                
+                // 簡易的な移動ロジック
+                let dx = bX - u.x;
+                let dy = bY - u.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < 50) {
+                    // ボスにヒット！ダメージを与える
+                    let dpsDmg = Math.max(1, Math.floor(clickPower * 0.3));
+                    dealDamage(dpsDmg, bX, bY);
+                    // 弾き飛ばされる
+                    u.x = Math.random() * window.innerWidth;
+                    u.y = window.innerHeight + 50;
+                } else {
+                    u.x += (dx / dist) * u.speed;
+                    u.y += (dy / dist) * u.speed;
+                }
+
+                let div = document.createElement('div');
+                div.className = 'mar-unit';
+                div.innerText = u.face;
+                div.style.left = u.x + 'px';
+                div.style.top = u.y + 'px';
+                field.appendChild(div);
+            }
+        }
+
+        // --- メインループ (秒間30回更新) ---
+        initUnits();
+        setInterval(() => {
+            if (autoCount > 0) {
+                updateUnits();
+            }
+            updateDisplay();
+        }, 33);
+
+        // 初回描画
+        updateDisplay();
+    </script>
+</body>
+</html>
