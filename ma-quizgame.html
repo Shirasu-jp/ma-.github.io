@@ -104,7 +104,7 @@
             }
         }
 
-        // 正解音（ピロリーン♪：高めの心地いい2音）
+        // 正解音（ピロリーン♪）
         function playCorrectSound() {
             initAudio();
             if (!audioCtx) return;
@@ -113,8 +113,8 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(587.33, now); // D5
-            osc.frequency.setValueAtTime(880, now + 0.1); // A5
+            osc.frequency.setValueAtTime(587.33, now);
+            osc.frequency.setValueAtTime(880, now + 0.1);
 
             gain.gain.setValueAtTime(0.15, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
@@ -126,7 +126,7 @@
             osc.stop(now + 0.3);
         }
 
-        // 不正解音（ブーッ！：低めの濁った音）
+        // 不正解音（ブーッ！）
         function playWrongSound() {
             initAudio();
             if (!audioCtx) return;
@@ -147,7 +147,6 @@
             osc.start(now);
             osc.stop(now + 0.3);
         }
-        ------------------------------------
 
         function nextQuestion() {
             isAnswered = false;
@@ -172,13 +171,13 @@
             const streakEl = document.getElementById('streak-count');
 
             if (isCorrect) {
-                playCorrectSound(); // 正解音
+                playCorrectSound();
                 streak++;
                 streakEl.innerText = streak;
                 msgEl.style.color = '#00ff66';
                 msgEl.innerText = '正解！✨';
             } else {
-                playWrongSound(); // 不正解音
+                playWrongSound();
                 msgEl.style.color = '#ff3366';
                 msgEl.innerText = `不正解…！（正解は ${isActuallyEqual ? 'はい' : 'いいえ'}） 記録リセット！`;
                 streak = 0;
