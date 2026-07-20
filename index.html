@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>(´ω`) ﾏｰ ポータルサイト</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #0d0d15;
+            color: #eee;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            margin-top: 10px;
+        }
+        h1 {
+            font-size: 32px;
+            color: #00f0ff;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            margin-bottom: 8px;
+        }
+        p.subtitle {
+            color: #888a9e;
+            font-size: 14px;
+        }
+
+        /* カードの配置グリッド */
+        #portal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* 各ページへのリンクカード */
+        .card {
+            background: #181826;
+            border: 1px solid #2a2a40;
+            border-radius: 12px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #ff007f;
+            box-shadow: 0 8px 20px rgba(255, 0, 127, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .card-icon {
+            font-size: 36px;
+            line-height: 1;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .card-desc {
+            font-size: 13px;
+            color: #aaa;
+            line-height: 1.4;
+            margin-bottom: 15px;
+        }
+
+        .card-tag {
+            align-self: flex-start;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #252538;
+            color: #00f0ff;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        footer {
+            margin-top: auto;
+            padding-top: 40px;
+            font-size: 12px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>(´ω`) ﾏｰ GAME PORTAL</h1>
+        <p class="subtitle">カオスなゲームとコンテンツの集積地</p>
+    </header>
+
+    <!-- ここにカードが動的に追加されます -->
+    <div id="portal-grid"></div>
+
+    <footer>
+        &copy; 2026 ﾏｰ Project. All rights reserved.
+    </footer>
+
+<script>
+    // ========================================================
+    // 💡 新しいページを増やしたい時は、このリストに1行追加するだけ！
+    // ========================================================
+    const pages = [
+        {
+            title: "ﾏｰﾏｰクリッカーズ",
+            url: "ma-ma-clickersgame.html",
+            icon: "🐏",
+            desc: "羊を狩って強化＆進化していく、無限インフレハクスラクリッカー。",
+            tag: "RPG / CLICKER"
+        },
+        {
+            title: "ﾏｰ・ザ・ダイナソー",
+            url: "ma-ryuugame.html",
+            icon: "🦖",
+            desc: "障害物をジャンプで避けてハイスコアを目指すランゲーム。",
+            tag: "ACTION"
+        },
+        {
+            title: "ﾏｰインスイーパー",
+            url: "ma-bomgame.html",
+            icon: "💣",
+            desc: "数字をヒントに地雷を回避する定番パズルゲーム。",
+            tag: "PUZZLE"
+        },
+        {
+            title: "パックﾏｰ",
+            url: "ma-pacgame.html",
+            icon: "🟡",
+            desc: "モンスターから逃げながらドットを回収するドット食べアクション。",
+            tag: "ARCADE"
+        },
+        {
+            title: "ﾏｰジンスネーク",
+            url: "ma-snakegame.html",
+            icon: "🐍",
+            desc: "エサを食べてどんどん長くなるスネークゲーム。",
+            tag: "ARCADE"
+        },
+        {
+            title: "クイズﾏｰ",
+            url: "ma-quizgame.html",
+            icon: "❓",
+            desc: "ﾏｰに関する知識が試されるクイズゲーム。",
+            tag: "QUIZ"
+        },
+        {
+            title: "ﾏｰ関係ないシューティング",
+            url: "ma-shootinggame.html",
+            icon: "🚀",
+            desc: "ﾏｰとは何の関係もない弾幕本格シューティング。",
+            tag: "SHOOTING"
+        },
+        {
+            title: "糞ブログ",
+            url: "buloma-.html",
+            icon: "💩",
+            desc: "くだらない日常や雑談を書き綴るブログページ。",
+            tag: "BLOG"
+        }
+    ];
+
+    // --- カード生成ロジック ---
+    const grid = document.getElementById('portal-grid');
+
+    pages.forEach(page => {
+        const card = document.createElement('a');
+        card.className = 'card';
+        card.href = page.url;
+
+        card.innerHTML = `
+            <div>
+                <div class="card-header">
+                    <div class="card-icon">${page.icon}</div>
+                    <div class="card-title">${page.title}</div>
+                </div>
+                <div class="card-desc">${page.desc}</div>
+            </div>
+            <div class="card-tag">${page.tag}</div>
+        `;
+
+        grid.appendChild(card);
+    });
+</script>
+
+</body>
+</html>
