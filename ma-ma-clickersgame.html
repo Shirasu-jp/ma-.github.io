@@ -2,10 +2,10 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ﾏｰの無限狩りMMO - ステ振り版</title>
+    <title>ﾏｰの無限狩りMMO - 戦略ハクスラ版</title>
     <style>
         body {
-            background-color: #111;
+            background-color: #0b0b12;
             color: #eee;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             text-align: center;
@@ -22,33 +22,51 @@
             flex-direction: column;
             border-left: 2px solid #333;
             border-right: 2px solid #333;
-            background-color: #1a1a2e;
+            background-color: #141423;
             position: relative;
+        }
+        
+        /* --- 画面全体のフィーバー演出 --- */
+        #game-container.fever-mode {
+            animation: feverGlow 0.5s infinite alternate;
+        }
+        @keyframes feverGlow {
+            0% { box-shadow: inset 0 0 20px #ff0055; }
+            100% { box-shadow: inset 0 0 40px #ffaa00; }
+        }
+
+        /* --- ヘッダー・ステージ情報 --- */
+        #stage-header {
+            background: #000;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            color: #00f0ff;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 15px;
         }
         
         /* --- プレイヤーエリア --- */
         #player-zone {
-            padding: 15px;
-            background: linear-gradient(to bottom, #2b1055, #1a1a2e);
+            padding: 10px 15px;
+            background: linear-gradient(to bottom, #1d0f38, #141423);
             border-bottom: 2px solid #ff007f;
         }
         #player-name {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             color: #00f0ff;
-            margin-bottom: 5px;
             text-shadow: 0 0 10px #00f0ff;
-        }
-        #player-stats-basic {
-            font-size: 16px;
-            color: #ffaa00;
         }
         .exp-bar-bg {
             width: 100%;
-            height: 12px;
+            height: 8px;
             background-color: #222;
             border-radius: 10px;
-            margin-top: 8px;
+            margin-top: 5px;
             border: 1px solid #555;
             overflow: hidden;
         }
@@ -59,49 +77,84 @@
             transition: width 0.1s;
         }
 
-        /* --- ステータス振り分けパネル --- */
+        /* --- ステータス振り分け --- */
         #status-panel {
             background-color: rgba(0, 0, 0, 0.4);
-            border: 1px solid #00f0ff;
+            border: 1px solid #334466;
             border-radius: 8px;
-            margin-top: 10px;
-            padding: 10px;
-        }
-        .stat-header {
-            font-size: 14px;
-            color: #00f0ff;
-            font-weight: bold;
-            margin-bottom: 8px;
+            margin-top: 8px;
+            padding: 6px;
         }
         .stat-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            font-size: 13px;
+            gap: 6px;
+            font-size: 12px;
         }
         .stat-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             background: rgba(255,255,255,0.05);
-            padding: 4px 8px;
-            border-radius: 5px;
+            padding: 3px 6px;
+            border-radius: 4px;
         }
         .btn-add {
             background-color: #00ff66;
             color: #000;
             border: none;
-            border-radius: 4px;
+            border-radius: 3px;
             font-weight: bold;
-            padding: 2px 8px;
+            padding: 1px 6px;
             cursor: pointer;
-            transition: 0.1s;
         }
-        .btn-add:hover { background-color: #00cc52; }
-        .btn-add:disabled {
-            background-color: #444;
-            color: #888;
-            cursor: not-allowed;
+        .btn-add:disabled { background-color: #444; color: #888; }
+
+        /* --- アクティブスキルバー --- */
+        #skill-bar {
+            display: flex;
+            justify-content: space-around;
+            padding: 8px;
+            background: rgba(0,0,0,0.6);
+            border-bottom: 1px solid #333;
+        }
+        .skill-btn {
+            background: #222;
+            border: 1px solid #555;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+            margin: 0 4px;
+        }
+        .skill-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .skill-btn .cd-overlay {
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #ff3366;
+        }
+
+        /* --- フィーバー＆コンボゲージ --- */
+        #fever-container {
+            width: 100%;
+            height: 6px;
+            background: #222;
+            position: relative;
+        }
+        #fever-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffaa00, #ff0055);
+            transition: width 0.1s linear;
         }
 
         /* --- 敵エリア --- */
@@ -114,27 +167,23 @@
             cursor: pointer;
             position: relative;
         }
-        #enemy-zone:active #enemy-sprite {
-            transform: scale(0.9);
-        }
+        #enemy-zone:active #enemy-sprite { transform: scale(0.92); }
         #enemy-name {
             font-size: 22px;
-            color: #ff3366;
             font-weight: bold;
             margin-bottom: 5px;
-            text-shadow: 0 0 5px #ff3366;
         }
         #enemy-sprite {
-            font-size: 110px;
+            font-size: 100px;
             transition: transform 0.05s;
-            filter: drop-shadow(0 0 15px rgba(255,51,102,0.5));
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.2));
         }
         .hp-bar-bg {
-            width: 60%;
+            width: 70%;
             height: 18px;
             background-color: #333;
             border-radius: 10px;
-            margin-top: 15px;
+            margin-top: 10px;
             border: 2px solid #000;
             overflow: hidden;
             position: relative;
@@ -149,105 +198,146 @@
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             line-height: 18px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             color: white;
             text-shadow: 1px 1px 2px black;
         }
+        
+        /* ボスタイマー */
+        #boss-timer-container {
+            width: 50%;
+            height: 8px;
+            background: #222;
+            margin-top: 5px;
+            border-radius: 4px;
+            overflow: hidden;
+            display: none;
+        }
+        #boss-timer-fill {
+            height: 100%;
+            width: 100%;
+            background: #00f0ff;
+        }
+
+        /* --- レリック表示 --- */
+        #relic-zone {
+            background: #0a0a14;
+            padding: 6px;
+            border-top: 1px solid #223;
+            font-size: 11px;
+            color: #aaa;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .relic-tag {
+            background: #1e1e38;
+            border: 1px solid #445588;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #ffaa00;
+        }
 
         /* --- ログエリア --- */
         #log-zone {
-            height: 110px;
-            background-color: rgba(0, 0, 0, 0.85);
-            border-top: 2px solid #555;
+            height: 80px;
+            background-color: rgba(0, 0, 0, 0.9);
+            border-top: 1px solid #333;
             text-align: left;
-            padding: 8px;
-            font-size: 13px;
+            padding: 6px;
+            font-size: 11px;
             overflow-y: auto;
             color: #ccc;
             font-family: monospace;
         }
         .log-sys { color: #00f0ff; }
         .log-kill { color: #ff3366; }
-        .log-lvl { color: #00ff66; font-weight: bold; }
-        .log-stat { color: #ffaa00; }
-
-        /* --- UIボタン --- */
-        #ui-controls {
-            position: absolute;
-            top: 10px; right: 10px;
-        }
-        .btn-reset {
-            background-color: #333;
-            color: #fff;
-            border: 1px solid #777;
-            padding: 4px 8px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-        }
+        .log-boss { color: #ff0055; font-weight: bold; }
+        .log-relic { color: #ffaa00; font-weight: bold; }
 
         /* --- ダメージテキスト --- */
         .damage-text {
             position: absolute;
             color: #fff;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: bold;
             text-shadow: 0 0 5px #ff0000, 2px 2px 0 #000;
             pointer-events: none;
-            animation: floatUp 0.8s ease-out forwards;
+            animation: floatUp 0.7s ease-out forwards;
             z-index: 100;
         }
         @keyframes floatUp {
             0% { transform: translateY(0) scale(1); opacity: 1; }
-            50% { transform: translateY(-40px) scale(1.2); opacity: 1; }
-            100% { transform: translateY(-80px) scale(1); opacity: 0; }
+            50% { transform: translateY(-30px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-60px) scale(1); opacity: 0; }
         }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="ui-controls">
-        <button class="btn-reset" onclick="resetData()">データ重置</button>
+    <!-- ステージヘッダー -->
+    <div id="stage-header">
+        <div>STAGE <span id="val-stage" style="color:#ff0055;">1-1</span></div>
+        <div id="combo-display" style="color:#ffaa00; font-size:14px;">0 COMBO</div>
+        <button class="btn-reset" onclick="resetData()" style="font-size:10px;">リセット</button>
     </div>
 
     <!-- プレイヤーエリア -->
     <div id="player-zone">
-        <div id="player-name">(´ω`)ﾏｰ</div>
-        <div id="player-stats-basic">
-            Lv: <span id="val-level">1</span>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div id="player-name">(´ω`)ﾏｰ</div>
+            <div style="color:#ffaa00; font-size:14px;">Lv.<span id="val-level">1</span></div>
         </div>
         
-        <div class="exp-bar-bg">
-            <div id="exp-bar-fill"></div>
-        </div>
+        <div class="exp-bar-bg"><div id="exp-bar-fill"></div></div>
 
-        <!-- ステータス割り振りパネル -->
+        <!-- ステ振り -->
         <div id="status-panel">
-            <div class="stat-header">
-                未使用ポイント: <span id="val-pt" style="color:#00ff66; font-size:16px;">0</span> pt
+            <div style="font-size:12px; color:#00f0ff; margin-bottom:4px; text-align:left;">
+                未割り振り: <b id="val-pt" style="color:#00ff66;">0</b> pt
             </div>
             <div class="stat-grid">
                 <div class="stat-item">
-                    <span>攻撃力 (STR): <b id="val-str">1</b></span>
+                    <span>STR: <b id="val-str">1</b></span>
                     <button class="btn-add" onclick="addStat('str')">＋</button>
                 </div>
                 <div class="stat-item">
-                    <span>会心率 (CRIT): <b id="val-crit">5</b>%</span>
+                    <span>CRIT: <b id="val-crit">5</b>%</span>
                     <button class="btn-add" onclick="addStat('crit')">＋</button>
                 </div>
                 <div class="stat-item">
-                    <span>会心倍率 (CDMG): <b id="val-cdmg">1.5</b>倍</span>
+                    <span>CDMG: <b id="val-cdmg">1.5</b>x</span>
                     <button class="btn-add" onclick="addStat('cdmg')">＋</button>
                 </div>
                 <div class="stat-item">
-                    <span>自動攻撃 (AUTO): <b id="val-auto">0</b>/s</span>
+                    <span>AUTO: <b id="val-auto">0</b>/s</span>
                     <button class="btn-add" onclick="addStat('auto')">＋</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- スキルバー -->
+    <div id="skill-bar">
+        <button class="skill-btn" id="btn-skill-1" onclick="useSkill(1)">
+            🔥 狂乱 (3x力)
+            <div class="cd-overlay" id="cd-skill-1" style="display:none;">30</div>
+        </button>
+        <button class="skill-btn" id="btn-skill-2" onclick="useSkill(2)">
+            ✨ 羊召喚 (金羊)
+            <div class="cd-overlay" id="cd-skill-2" style="display:none;">60</div>
+        </button>
+        <button class="skill-btn" id="btn-skill-3" onclick="useSkill(3)">
+            ⚡ 一閃 (30%削り)
+            <div class="cd-overlay" id="cd-skill-3" style="display:none;">45</div>
+        </button>
+    </div>
+
+    <!-- フィーバーゲージ -->
+    <div id="fever-container"><div id="fever-bar-fill"></div></div>
 
     <!-- 敵エリア -->
     <div id="enemy-zone" onmousedown="clickAttack(event)" ontouchstart="clickAttack(event)">
@@ -257,30 +347,37 @@
             <div id="hp-bar-fill"></div>
             <div id="hp-text">10 / 10</div>
         </div>
+        <div id="boss-timer-container">
+            <div id="boss-timer-fill"></div>
+        </div>
     </div>
 
-    <!-- システムログ -->
+    <!-- 所持レリック -->
+    <div id="relic-zone">
+        <span style="color:#666;">[所持秘宝]:</span>
+        <div id="relic-list" style="display:inline-flex; gap:5px;">なし</div>
+    </div>
+
+    <!-- ログ -->
     <div id="log-zone">
-        <div>[System] ﾏｰのMMO世界へようこそ！レベルを上げてポイントで強化しよう。</div>
+        <div>[System] 敵を倒してステージを進めよう！5ステージごとにボスが出現！</div>
     </div>
 </div>
 
 <script>
-    // --- Web Audio API（リアル羊サウンド対応） ---
+    // --- Web Audio API ---
     let audioCtx = null;
-    function initAudio() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
 
-    function playHitSound() {
+    function playHitSound(pitch = 150) {
         if (!audioCtx) return;
         const now = audioCtx.currentTime;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'square';
-        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.setValueAtTime(pitch, now);
         osc.frequency.exponentialRampToValueAtTime(40, now + 0.08);
-        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.setValueAtTime(0.12, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -288,23 +385,19 @@
         osc.stop(now + 0.08);
     }
 
-    // リアルな羊の鳴き声（ビブラート＋フィルター合成）
     function playDefeatSound() {
         if (!audioCtx) return;
         const now = audioCtx.currentTime;
-
         const osc = audioCtx.createOscillator();
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(180, now);
 
-        // ビブラート（波打つ鳴き声）
         const lfo = audioCtx.createOscillator();
         lfo.frequency.setValueAtTime(7, now);
         const lfoGain = audioCtx.createGain();
         lfoGain.gain.setValueAtTime(20, now);
         lfo.connect(osc.frequency);
 
-        // 口の響き（バンドパスフィルター）
         const filter = audioCtx.createBiquadFilter();
         filter.type = 'bandpass';
         filter.frequency.setValueAtTime(850, now);
@@ -312,177 +405,195 @@
 
         const gain = audioCtx.createGain();
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.25, now + 0.05);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
 
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(audioCtx.destination);
 
-        lfo.start(now);
-        osc.start(now);
-        lfo.stop(now + 0.5);
-        osc.stop(now + 0.5);
+        lfo.start(now); osc.start(now);
+        lfo.stop(now + 0.5); osc.stop(now + 0.5);
     }
 
-    function playLevelUpSound() {
-        if (!audioCtx) return;
-        const now = audioCtx.currentTime;
-        const notes = [523.25, 659.25, 783.99, 1046.50];
-        notes.forEach((freq, index) => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0, now + index * 0.08);
-            gain.gain.linearRampToValueAtTime(0.2, now + index * 0.08 + 0.04);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.08 + 0.3);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now + index * 0.08);
-            osc.stop(now + index * 0.08 + 0.4);
-        });
-    }
-
-    // --- プレイヤー＆ゲームデータ ---
+    // --- ゲームデータ構造 ---
     let player = {
-        level: 1,
-        exp: 0,
-        expNext: 10,
-        pts: 0,         // 未割り振りポイント
-        str: 1,         // 攻撃力 (STR)
-        critRate: 5,    // 会心率 (%)
-        critMult: 1.5,  // 会心倍率
-        autoDmg: 0,     // 自動攻撃力
-        killCount: 0
+        level: 1, exp: 0, expNext: 10, pts: 0,
+        str: 1, critRate: 5, critMult: 1.5, autoDmg: 0,
+        stageMajor: 1, stageMinor: 1,
+        combo: 0, feverGauge: 0, isFever: false,
+        relics: [] // 所持レリックID
     };
 
     let enemy = {
-        name: "",
-        hp: 10,
-        maxHp: 10,
-        emoji: "🐏"
+        name: "", hp: 10, maxHp: 10, type: "normal", emoji: "🐏",
+        bossTimer: 15, maxBossTimer: 15
     };
 
-    const enemyEmojis = ["🐏", "🐑", "☁"];
-    const prefixes = ["狂乱の", "暗黒", "神聖なる", "鋼鉄の", "見習い", "灼熱の", "次元の", "虚無の", "野生の", "伝説の", "呪われた", "覚醒した"];
-    const nouns = ["ウール", "もふもふ", "角獣", "クラウド", "羊毛", "シープ", "メーメー", "魔獣", "精霊", "綿あめ"];
-    const suffixes = ["", "・改", "キング", "Lv.99", " (偽)", "の化身", "・極", "神", "エース", "もどき"];
+    // スキル状態 (CD: 残り秒数, duration: 効果時間)
+    let skills = {
+        1: { cd: 0, maxCd: 25, active: 0, maxActive: 8 }, // 狂乱
+        2: { cd: 0, maxCd: 50 },                          // 羊召喚
+        3: { cd: 0, maxCd: 40 }                           // 一閃
+    };
+
+    // レリック定義
+    const ALL_RELICS = [
+        { id: "clock", name: "砂時計", desc: "ボス制限時間 +5秒", effect: () => {} },
+        { id: "scissors", name: "黄金バサミ", desc: "CRIT率 +10%", effect: () => player.critRate += 10 },
+        { id: "horn", name: "狂戦士の角", desc: "狂乱の火力 3倍→5倍", effect: () => {} },
+        { id: "gear", name: "歯車", desc: "スキルCD 15%短縮", effect: () => {} }
+    ];
 
     const evolutions = [
-        { lv: 1, face: "(´ω`)ﾏｰ" },
-        { lv: 5, face: "(｀・ω・´)ﾏｰ" },
-        { lv: 10, face: "ᕙ(´ω`)ᕗﾏｰ" },
-        { lv: 20, face: "三( 厂˙ω˙ )厂ﾏｰ" },
-        { lv: 35, face: "⚔️( ✧Д✧)ﾏｰ⚔️" },
-        { lv: 50, face: "👼(´ω`)ﾏｰ👼" },
-        { lv: 75, face: "🐉( 炎ω炎)ﾏｰ🐉" },
-        { lv: 100, face: "🌌( ˘ω˘ )ﾏｰ🌌 [神]" }
+        { lv: 1, face: "(´ω`)ﾏｰ" }, { lv: 5, face: "(｀・ω・´)ﾏｰ" },
+        { lv: 10, face: "ᕙ(´ω`)ᕗﾏｰ" }, { lv: 20, face: "三( 厂˙ω˙ )厂ﾏｰ" },
+        { lv: 35, face: "⚔️( ✧Д✧)ﾏｰ⚔️" }, { lv: 50, face: "👼(´ω`)ﾏｰ👼" }
     ];
 
     // --- セーブ/ロード ---
-    const SAVE_KEY = 'mar_mmo_stat_save';
-    function saveGame() {
-        localStorage.setItem(SAVE_KEY, JSON.stringify(player));
-    }
+    const SAVE_KEY = 'mar_mmo_strat_save';
+    function saveGame() { localStorage.setItem(SAVE_KEY, JSON.stringify(player)); }
     function loadGame() {
         const saved = localStorage.getItem(SAVE_KEY);
         if (saved) {
-            const data = JSON.parse(saved);
-            player = { ...player, ...data }; // 新しいパラメータを追加しても壊れないように統合
+            player = { ...player, ...JSON.parse(saved) };
             updatePlayerFace();
+            renderRelics();
             updateUI();
-            addLog(`<span class="log-sys">[System] セーブデータをロードしました（Lv.${player.level}）</span>`);
         }
     }
     function resetData() {
-        if(confirm("データをリセットして最初からやり直しますか？")) {
+        if(confirm("データをリセットしますか？")) {
             localStorage.removeItem(SAVE_KEY);
             location.reload();
         }
     }
 
-    // --- ステータス振り分け ---
+    // --- ステータス割り振り ---
     function addStat(type) {
         if (player.pts <= 0) return;
-
-        if (type === 'str') {
-            player.str += 1;
-            addLog(`<span class="log-stat">[強化] 攻撃力(STR) が ${player.str} に上昇！</span>`);
-        } else if (type === 'crit') {
-            if (player.critRate >= 75) {
-                alert("会心率は75%が上限です！");
-                return;
-            }
+        if (type === 'str') player.str += 1;
+        else if (type === 'crit') {
+            if (player.critRate >= 80) return alert("CRIT率は80%が上限です！");
             player.critRate += 1;
-            addLog(`<span class="log-stat">[強化] 会心率(CRIT) が ${player.critRate}% に上昇！</span>`);
-        } else if (type === 'cdmg') {
-            player.critMult = parseFloat((player.critMult + 0.1).toFixed(1));
-            addLog(`<span class="log-stat">[強化] 会心倍率(CDMG) が ${player.critMult}倍 に上昇！</span>`);
-        } else if (type === 'auto') {
-            player.autoDmg += 1;
-            addLog(`<span class="log-stat">[強化] 自動攻撃(AUTO) が ${player.autoDmg}/s に上昇！</span>`);
         }
-
+        else if (type === 'cdmg') player.critMult = parseFloat((player.critMult + 0.1).toFixed(1));
+        else if (type === 'auto') player.autoDmg += 1;
         player.pts--;
         updateUI();
         saveGame();
     }
 
-    // --- ゲームの挙動 ---
-    function generateEnemy() {
-        enemy.maxHp = Math.floor(10 * Math.pow(1.15, player.level - 1));
-        enemy.hp = enemy.maxHp;
+    // --- 敵生成ロジック ---
+    function generateEnemy(forcedType = null) {
+        let isBoss = (player.stageMinor === 5);
+        let hpMultiplier = Math.pow(1.22, (player.stageMajor - 1) * 5 + player.stageMinor - 1);
         
-        enemy.emoji = enemyEmojis[Math.floor(Math.random() * enemyEmojis.length)];
-        const pre = prefixes[Math.floor(Math.random() * prefixes.length)];
-        const nou = nouns[Math.floor(Math.random() * nouns.length)];
-        const suf = suffixes[Math.floor(Math.random() * suffixes.length)];
-        enemy.name = `${pre}${nou}${suf}`;
+        enemy.type = forcedType || (isBoss ? "boss" : (Math.random() < 0.1 ? "metal" : (Math.random() < 0.08 ? "golden" : "normal")));
+        
+        if (enemy.type === "boss") {
+            enemy.name = `【BOSS】魔王羊 Stage ${player.stageMajor}`;
+            enemy.maxHp = Math.floor(80 * hpMultiplier);
+            enemy.emoji = "👹";
+            enemy.maxBossTimer = hasRelic("clock") ? 20 : 15;
+            enemy.bossTimer = enemy.maxBossTimer;
+            document.getElementById('boss-timer-container').style.display = 'block';
+            addLog(`<span class="log-boss">[BOSS] ${enemy.name} が立ちふさがる！（制限時間: ${enemy.bossTimer}秒）</span>`);
+        } else if (enemy.type === "metal") {
+            enemy.name = "メタルもふ";
+            enemy.maxHp = Math.floor(15 + player.stageMajor * 3);
+            enemy.emoji = "⚙️";
+            document.getElementById('boss-timer-container').style.display = 'none';
+            addLog(`<span class="log-sys">[特殊] メタルもふ出現！(すべての攻撃ダメージが1になる)</span>`);
+        } else if (enemy.type === "golden") {
+            enemy.name = "ゴールデン羊";
+            enemy.maxHp = Math.floor(30 * hpMultiplier);
+            enemy.emoji = "✨";
+            document.getElementById('boss-timer-container').style.display = 'none';
+            addLog(`<span class="log-relic">[レア] ゴールデン羊出現！撃破でStat Pt獲得！</span>`);
+        } else {
+            enemy.name = `野生の羊 (${player.stageMajor}-${player.stageMinor})`;
+            enemy.maxHp = Math.floor(12 * hpMultiplier);
+            enemy.emoji = "🐏";
+            document.getElementById('boss-timer-container').style.display = 'none';
+        }
 
+        enemy.hp = enemy.maxHp;
         document.getElementById('enemy-sprite').innerText = enemy.emoji;
         document.getElementById('enemy-name').innerText = enemy.name;
+        document.getElementById('enemy-name').style.color = enemy.type === "boss" ? "#ff0055" : (enemy.type === "golden" ? "#ffaa00" : "#fff");
         
         updateEnemyUI();
-        addLog(`<span class="log-sys">[System] <strong>${enemy.name}</strong> が出現！</span>`);
     }
 
+    // --- 攻撃処理 ---
     function clickAttack(e) {
         initAudio();
-        dealDamage(player.str, e);
+        
+        // コンボ＆フィーバー加算
+        player.combo++;
+        if (!player.isFever) {
+            player.feverGauge += 3;
+            if (player.feverGauge >= 100) triggerFever();
+        }
+
+        let baseDmg = player.str;
+        if (skills[1].active > 0) {
+            baseDmg *= hasRelic("horn") ? 5 : 3; // 狂乱スキル
+        }
+
+        dealDamage(baseDmg, e, true);
     }
 
-    function dealDamage(baseDmg, e = null) {
+    function dealDamage(baseDmg, e = null, isClick = false) {
         if (enemy.hp <= 0) return;
 
-        let isCrit = (Math.random() * 100) < player.critRate;
         let finalDamage = baseDmg;
-        if (isCrit) {
+        let isCrit = player.isFever || (Math.random() * 100 < player.critRate);
+
+        // メタル羊の判定
+        if (enemy.type === "metal") {
+            finalDamage = 1;
+            isCrit = false;
+        } else if (isCrit) {
             finalDamage = Math.floor(finalDamage * player.critMult);
         }
+
         if (finalDamage < 1) finalDamage = 1;
 
         enemy.hp -= finalDamage;
         if (enemy.hp < 0) enemy.hp = 0;
 
-        playHitSound();
-        if (e) showDamageText(e, finalDamage, isCrit);
+        playHitSound(isCrit ? 300 : 150);
+        if (e && isClick) showDamageText(e, finalDamage, isCrit);
         updateEnemyUI();
 
-        if (enemy.hp === 0) {
-            defeatEnemy();
-        }
+        if (enemy.hp === 0) defeatEnemy();
     }
 
     function defeatEnemy() {
         playDefeatSound();
-        player.killCount++;
         
-        let expGained = Math.floor(enemy.maxHp * (0.2 + Math.random() * 0.1));
-        if (expGained < 1) expGained = 1;
-        
+        let expGained = Math.floor(enemy.maxHp * 0.3);
+        if (enemy.type === "golden") {
+            expGained *= 3;
+            player.pts += 1; // ゴールデン羊からPt獲得
+            addLog(`<span class="log-relic">[ボーナス] ゴールデン羊撃破！ Stat Pt +1 獲得！</span>`);
+        }
+
         player.exp += expGained;
-        addLog(`<span class="log-kill">[Battle] ${enemy.name} を撃破！ Exp +${expGained}</span>`);
+        
+        // ステージ進行処理
+        if (enemy.type === "boss") {
+            addLog(`<span class="log-boss">[撃破!] ボスを倒した！ 次のエリアへ進む！</span>`);
+            dropRelic();
+            player.stageMajor++;
+            player.stageMinor = 1;
+        } else {
+            player.stageMinor++;
+            if (player.stageMinor > 5) player.stageMinor = 5;
+        }
 
         checkLevelUp();
         saveGame();
@@ -491,22 +602,115 @@
         setTimeout(() => {
             generateEnemy();
             document.getElementById('enemy-sprite').style.opacity = '1';
-        }, 300);
+        }, 200);
     }
 
+    // ボスタイマー失敗処理
+    function failBoss() {
+        addLog(`<span class="log-boss">[失敗...] ボスを時間内に倒せなかった！ ステージ撤退！</span>`);
+        player.stageMinor = 1; // 1-1に戻る
+        generateEnemy();
+    }
+
+    // --- スキル処理 ---
+    function useSkill(id) {
+        if (skills[id].cd > 0) return;
+
+        let cdReducer = hasRelic("gear") ? 0.85 : 1.0;
+
+        if (id === 1) { // 狂乱
+            skills[1].active = skills[1].maxActive;
+            skills[1].cd = Math.floor(skills[1].maxCd * cdReducer);
+            addLog(`<span class="log-sys">[スキル] 狂乱発動！ 攻撃力が超絶UP！</span>`);
+        } else if (id === 2) { // 羊召喚
+            skills[2].cd = Math.floor(skills[2].maxCd * cdReducer);
+            generateEnemy("golden");
+            addLog(`<span class="log-sys">[スキル] 黄金の羊を召喚した！</span>`);
+        } else if (id === 3) { // 一閃
+            skills[3].cd = Math.floor(skills[3].maxCd * cdReducer);
+            let dmg = Math.floor(enemy.maxHp * 0.3);
+            dealDamage(dmg);
+            addLog(`<span class="log-sys">[スキル] 一閃！ 敵の最大HPの30% (${dmg}) ダメージ！</span>`);
+        }
+        updateUI();
+    }
+
+    // --- フィーバー処理 ---
+    function triggerFever() {
+        player.isFever = true;
+        player.feverGauge = 100;
+        document.getElementById('game-container').classList.add('fever-mode');
+        addLog(`<span class="log-relic">[FEVER!!] フィーバーモード突入！ 全攻撃クリティカル！！</span>`);
+        
+        let feverTimer = setInterval(() => {
+            player.feverGauge -= 10;
+            if (player.feverGauge <= 0) {
+                clearInterval(feverTimer);
+                player.isFever = false;
+                player.feverGauge = 0;
+                document.getElementById('game-container').classList.remove('fever-mode');
+            }
+            updateUI();
+        }, 800);
+    }
+
+    // --- レリックドロップ ---
+    function dropRelic() {
+        const unowned = ALL_RELICS.filter(r => !player.relics.includes(r.id));
+        if (unowned.length === 0 || Math.random() > 0.6) return;
+
+        const dropped = unowned[Math.floor(Math.random() * unowned.length)];
+        player.relics.push(dropped.id);
+        dropped.effect();
+        addLog(`<span class="log-relic">[秘宝発見] 秘宝『${dropped.name}』を獲得！ (${dropped.desc})</span>`);
+        renderRelics();
+    }
+
+    function hasRelic(id) { return player.relics.includes(id); }
+
+    function renderRelics() {
+        const listEl = document.getElementById('relic-list');
+        if (player.relics.length === 0) { listEl.innerText = "なし"; return; }
+        listEl.innerHTML = player.relics.map(id => {
+            const r = ALL_RELICS.find(x => x.id === id);
+            return `<span class="relic-tag" title="${r.desc}">${r.name}</span>`;
+        }).join('');
+    }
+
+    // --- メインゲームループ (1秒ごと) ---
+    setInterval(() => {
+        // 自動攻撃
+        if (player.autoDmg > 0 && enemy.hp > 0) {
+            dealDamage(player.autoDmg);
+        }
+
+        // ボスタイマー
+        if (enemy.type === "boss" && enemy.hp > 0) {
+            enemy.bossTimer--;
+            if (enemy.bossTimer <= 0) failBoss();
+        }
+
+        // スキルクールダウン＆アクティブ効果減少
+        for (let key in skills) {
+            if (skills[key].cd > 0) skills[key].cd--;
+            if (skills[key].active && skills[key].active > 0) skills[key].active--;
+        }
+
+        // コンボ自然減衰
+        if (player.combo > 0) player.combo = Math.max(0, player.combo - 2);
+
+        updateUI();
+        updateEnemyUI();
+    }, 1000);
+
+    // --- レベルアップ ---
     function checkLevelUp() {
-        let leveledUp = false;
         while (player.exp >= player.expNext) {
             player.exp -= player.expNext;
             player.level++;
             player.expNext = Math.floor(player.expNext * 1.3);
-            player.pts += 3; // レベルアップで3pt獲得！
-            leveledUp = true;
-        }
-
-        if (leveledUp) {
-            playLevelUpSound();
-            addLog(`<span class="log-lvl">[LEVEL UP!] レベル ${player.level} にアップ！ ステータスポイントを 獲得！</span>`);
+            player.pts += 3;
+            addLog(`<span class="log-boss">[LEVEL UP!] レベル ${player.level} にアップ！ 3pt 獲得！</span>`);
             updatePlayerFace();
         }
         updateUI();
@@ -515,47 +719,46 @@
     function updatePlayerFace() {
         let currentFace = evolutions[0].face;
         for (let i = 0; i < evolutions.length; i++) {
-            if (player.level >= evolutions[i].lv) {
-                currentFace = evolutions[i].face;
-            }
+            if (player.level >= evolutions[i].lv) currentFace = evolutions[i].face;
         }
-        const nameEl = document.getElementById('player-name');
-        if (nameEl.innerText !== currentFace) {
-            nameEl.innerText = currentFace;
-            addLog(`<span class="log-lvl">[進化] ﾏｰが『${currentFace}』に進化！</span>`);
-        }
+        document.getElementById('player-name').innerText = currentFace;
     }
-
-    // 1秒ごとの自動攻撃ループ
-    setInterval(() => {
-        if (player.autoDmg > 0 && enemy.hp > 0) {
-            dealDamage(player.autoDmg);
-        }
-    }, 1000);
 
     // --- UI更新 ---
     function updateUI() {
+        document.getElementById('val-stage').innerText = `${player.stageMajor}-${player.stageMinor}`;
+        document.getElementById('combo-display').innerText = `${player.combo} COMBO`;
         document.getElementById('val-level').innerText = player.level;
         document.getElementById('val-pt').innerText = player.pts;
-        document.getElementById('val-str').innerText = player.str;
+        document.getElementById('val-str').innerText = player.str + (skills[1].active > 0 ? " (狂乱中!)" : "");
         document.getElementById('val-crit').innerText = player.critRate;
         document.getElementById('val-cdmg').innerText = player.critMult;
         document.getElementById('val-auto').innerText = player.autoDmg;
 
-        // ポイントが無ければ「＋」ボタンを無効化
-        const btns = document.querySelectorAll('.btn-add');
-        btns.forEach(btn => {
-            btn.disabled = (player.pts <= 0);
-        });
+        document.querySelectorAll('.btn-add').forEach(b => b.disabled = player.pts <= 0);
 
-        let expPercent = (player.exp / player.expNext) * 100;
-        document.getElementById('exp-bar-fill').style.width = `${expPercent}%`;
+        // スキルUI
+        for (let i = 1; i <= 3; i++) {
+            const overlay = document.getElementById(`cd-skill-${i}`);
+            if (skills[i].cd > 0) {
+                overlay.style.display = 'flex';
+                overlay.innerText = skills[i].cd;
+            } else {
+                overlay.style.display = 'none';
+            }
+        }
+
+        document.getElementById('fever-bar-fill').style.width = `${player.feverGauge}%`;
+        document.getElementById('exp-bar-fill').style.width = `${(player.exp / player.expNext) * 100}%`;
     }
 
     function updateEnemyUI() {
-        let hpPercent = (enemy.hp / enemy.maxHp) * 100;
-        document.getElementById('hp-bar-fill').style.width = `${hpPercent}%`;
+        document.getElementById('hp-bar-fill').style.width = `${(enemy.hp / enemy.maxHp) * 100}%`;
         document.getElementById('hp-text').innerText = `${Math.ceil(enemy.hp)} / ${enemy.maxHp}`;
+        
+        if (enemy.type === "boss") {
+            document.getElementById('boss-timer-fill').style.width = `${(enemy.bossTimer / enemy.maxBossTimer) * 100}%`;
+        }
     }
 
     function addLog(text) {
@@ -564,53 +767,32 @@
         div.innerHTML = text;
         logZone.appendChild(div);
         logZone.scrollTop = logZone.scrollHeight;
-        
-        if (logZone.childNodes.length > 50) {
-            logZone.removeChild(logZone.firstChild);
-        }
+        if (logZone.childNodes.length > 40) logZone.removeChild(logZone.firstChild);
     }
 
     function showDamageText(e, dmg, isCrit) {
         const gameContainer = document.getElementById('game-container');
         const dmgText = document.createElement('div');
         dmgText.className = 'damage-text';
-        
-        if (isCrit) {
-            dmgText.innerText = `CRITICAL! ${dmg}`;
-            dmgText.style.color = '#ffaa00';
-            dmgText.style.fontSize = '34px';
-        } else {
-            dmgText.innerText = dmg;
-        }
+        dmgText.innerText = isCrit ? `CRIT! ${dmg}` : dmg;
+        if (isCrit) { dmgText.style.color = '#ffaa00'; dmgText.style.fontSize = '30px'; }
 
         const rect = gameContainer.getBoundingClientRect();
-        let clientX = e.clientX || (e.touches && e.touches[0].clientX);
-        let clientY = e.clientY || (e.touches && e.touches[0].clientY);
-        
-        if (!clientX) {
-            clientX = rect.left + rect.width / 2;
-            clientY = rect.top + rect.height / 2;
-        }
+        let clientX = e.clientX || (e.touches && e.touches[0].clientX) || (rect.left + rect.width / 2);
+        let clientY = e.clientY || (e.touches && e.touches[0].clientY) || (rect.top + rect.height / 2);
 
-        dmgText.style.left = `${clientX - rect.left - 20 + (Math.random()*30-15)}px`;
-        dmgText.style.top = `${clientY - rect.top - 20 + (Math.random()*30-15)}px`;
+        dmgText.style.left = `${clientX - rect.left - 20 + (Math.random()*20-10)}px`;
+        dmgText.style.top = `${clientY - rect.top - 20 + (Math.random()*20-10)}px`;
         
         gameContainer.appendChild(dmgText);
-        
-        setTimeout(() => {
-            if(dmgText.parentNode) dmgText.parentNode.removeChild(dmgText);
-        }, 800);
+        setTimeout(() => dmgText.parentNode && dmgText.parentNode.removeChild(dmgText), 700);
     }
 
-    // 初期化
     window.onload = () => {
         loadGame();
         generateEnemy();
         updateUI();
-        updatePlayerFace();
     };
-
-    setInterval(saveGame, 10000);
 </script>
 </body>
 </html>
