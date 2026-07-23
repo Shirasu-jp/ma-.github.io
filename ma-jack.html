@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>本格ブラックジャック - ﾏｰ PORTAL</title>
+    <title>ﾏｰブラックジャック - ﾏｰ PORTAL</title>
     <style>
         * {
             box-sizing: border-box;
@@ -68,13 +68,22 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
+        }
+
+        /* ﾏｰのディーラーマスコット */
+        .dealer-mascot {
+            font-size: 24px;
+            margin-bottom: 2px;
+            color: #ffd700;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(255,215,0,0.5);
         }
 
         .hand-area {
             text-align: center;
             background: rgba(0,0,0,0.25);
-            padding: 15px;
+            padding: 12px;
             border-radius: 12px;
             width: 100%;
             border: 1px solid rgba(255,255,255,0.1);
@@ -83,7 +92,7 @@
         .hand-title {
             font-size: 13px;
             color: #aaa;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -92,23 +101,23 @@
             display: flex;
             justify-content: center;
             gap: 8px;
-            min-height: 90px;
+            min-height: 85px;
             align-items: center;
         }
 
         /* トランプカードデザイン */
         .card {
-            width: 60px;
-            height: 85px;
+            width: 58px;
+            height: 82px;
             background: #fff;
             color: #333;
             border-radius: 6px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 6px;
+            padding: 5px;
             font-weight: bold;
-            font-size: 15px;
+            font-size: 14px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
             position: relative;
             animation: dealCard 0.3s ease-out;
@@ -117,9 +126,12 @@
             color: #d32f2f;
         }
         .card.hidden {
-            background: #b71c1c;
-            color: #b71c1c;
-            border: 2px solid #fff;
+            background: #1a1a2e;
+            color: #00f0ff;
+            border: 2px solid #e94560;
+            font-size: 12px;
+            justify-content: center;
+            align-items: center;
         }
         .card-top {
             align-self: flex-start;
@@ -127,7 +139,7 @@
         }
         .card-center {
             align-self: center;
-            font-size: 24px;
+            font-size: 22px;
             line-height: 1;
         }
         .card-bottom {
@@ -142,15 +154,15 @@
         }
 
         .score-display {
-            margin-top: 8px;
-            font-size: 14px;
+            margin-top: 6px;
+            font-size: 13px;
             color: #ffd700;
             font-weight: bold;
         }
 
         /* メッセージエリア */
         .message-box {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: bold;
             color: #ffd700;
             text-align: center;
@@ -178,8 +190,8 @@
             gap: 10px;
         }
         .chip {
-            width: 45px;
-            height: 45px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             border: 3px dashed #fff;
             display: flex;
@@ -208,7 +220,7 @@
             padding: 12px;
             border: none;
             border-radius: 8px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             transition: background 0.2s, transform 0.1s;
@@ -247,7 +259,7 @@
         <div class="felt-inner">
             <!-- ディーラーのハンド -->
             <div class="hand-area">
-                <div class="hand-title">ディーラーのハンド</div>
+                <div class="dealer-mascot">(´ω`) ﾏｰディーラー</div>
                 <div class="cards-container" id="dealer-cards"></div>
                 <div class="score-display" id="dealer-score">-</div>
             </div>
@@ -272,16 +284,16 @@
                 <div class="chip c500" onclick="addBet(500)">500</div>
             </div>
             <div class="action-buttons">
-                <button class="btn btn-red" id="btn-clear" onclick="clearBet()">ベットリセット</button>
-                <button class="btn btn-gold" id="btn-deal" onclick="startDeal()" disabled>ディール (勝負)</button>
-                <button class="btn btn-blue" id="btn-hit" onclick="playerHit()" disabled>ヒット (+1枚)</button>
-                <button class="btn btn-green" id="btn-stand" onclick="playerStand()" disabled>スタンド (勝負)</button>
+                <button class="btn btn-red" id="btn-clear" onclick="clearBet()">リセット</button>
+                <button class="btn btn-gold" id="btn-deal" onclick="startDeal()" disabled>ディール</button>
+                <button class="btn btn-blue" id="btn-hit" onclick="playerHit()" disabled>ヒット</button>
+                <button class="btn btn-green" id="btn-stand" onclick="playerStand()" disabled>スタンド</button>
+                <button class="btn btn-gold" id="btn-next" onclick="resetRound()" style="display:none;">もう一度</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- Web Audio API SE ---
         let audioCtx = null;
         function initAudio() {
             if (!audioCtx) {
@@ -334,13 +346,12 @@
             } catch(e){}
         }
 
-        // --- ゲーム状態変数 (localStorage対応) ---
         let balance = parseInt(localStorage.getItem('bj_balance')) || 1000;
         let currentBet = 0;
         let deck = [];
         let playerHand = [];
         let dealerHand = [];
-        let gameState = 'BETTING'; // 'BETTING', 'PLAYING', 'DEALER_TURN', 'ROUND_OVER'
+        let gameState = 'BETTING';
 
         const suits = ['♠', '♥', '♦', '♣'];
         const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -352,23 +363,40 @@
         function updateDisplay() {
             document.getElementById('balance-display').innerText = balance.toLocaleString();
             document.getElementById('current-bet-display').innerText = currentBet.toLocaleString();
-            document.getElementById('btn-deal').disabled = currentBet === 0 || gameState !== 'BETTING';
-            document.getElementById('btn-clear').disabled = currentBet === 0 || gameState !== 'BETTING';
-            document.getElementById('btn-hit').disabled = gameState !== 'PLAYING';
-            document.getElementById('btn-stand').disabled = gameState !== 'PLAYING';
             
-            // チップの有効/無効
+            let isBetting = (gameState === 'BETTING');
+            let isPlaying = (gameState === 'PLAYING');
+            let isOver = (gameState === 'ROUND_OVER');
+
+            document.getElementById('btn-deal').disabled = currentBet === 0 || !isBetting;
+            document.getElementById('btn-clear').disabled = currentBet === 0 || !isBetting;
+            document.getElementById('btn-hit').disabled = !isPlaying;
+            document.getElementById('btn-stand').disabled = !isPlaying;
+
+            // ラウンド終了時は「もう一度」ボタンを表示し、通常アクションボタンを隠す
+            if (isOver) {
+                document.getElementById('btn-deal').style.display = 'none';
+                document.getElementById('btn-clear').style.display = 'none';
+                document.getElementById('btn-hit').style.display = 'none';
+                document.getElementById('btn-stand').style.display = 'none';
+                document.getElementById('btn-next').style.display = 'block';
+            } else {
+                document.getElementById('btn-deal').style.display = 'block';
+                document.getElementById('btn-clear').style.display = 'block';
+                document.getElementById('btn-hit').style.display = 'block';
+                document.getElementById('btn-stand').style.display = 'block';
+                document.getElementById('btn-next').style.display = 'none';
+            }
+
             let chips = document.querySelectorAll('.chip');
             chips.forEach(c => {
-                c.style.opacity = (gameState === 'BETTING') ? '1' : '0.5';
-                c.style.pointerEvents = (gameState === 'BETTING') ? 'auto' : 'none';
+                c.style.opacity = isBetting ? '1' : '0.5';
+                c.style.pointerEvents = isBetting ? 'auto' : 'none';
             });
         }
 
-        // --- デッキ生成とシャッフル (標準52枚×6デッキなどで確率を正しく維持) ---
         function createDeck() {
             deck = [];
-            // 安定した標準6デッキシューを採用
             for (let d = 0; d < 6; d++) {
                 for (let s of suits) {
                     for (let v of values) {
@@ -376,7 +404,6 @@
                     }
                 }
             }
-            // Fisher-Yates シャッフル
             for (let i = deck.length - 1; i > 0; i--) {
                 let j = Math.floor(Math.random() * (i + 1));
                 [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -384,13 +411,10 @@
         }
 
         function drawCard() {
-            if (deck.length < 20) {
-                createDeck(); // 残りが少なくなったらリシャッフル
-            }
+            if (deck.length < 20) createDeck();
             return deck.pop();
         }
 
-        // --- ベット操作 ---
         function addBet(amount) {
             if (gameState !== 'BETTING') return;
             if (balance >= amount) {
@@ -398,7 +422,7 @@
                 currentBet += amount;
                 playSound('chip');
                 updateDisplay();
-                document.getElementById('message-box').innerText = `ベット額: ${currentBet} G - ディールを押して開始`;
+                document.getElementById('message-box').innerText = `ベット額: ${currentBet} G - ディールを押してね`;
             }
         }
 
@@ -408,22 +432,15 @@
             currentBet = 0;
             playSound('chip');
             updateDisplay();
-            document.getElementById('message-box').innerText = 'ベット額をリセットしました';
+            document.getElementById('message-box').innerText = 'ベットをリセットしました';
         }
 
-        // --- ゲーム開始 (ディール) ---
         function startDeal() {
             if (currentBet === 0 || gameState !== 'BETTING') return;
             createDeck();
-            playerHand = [];
-            dealerHand = [];
+            playerHand = [drawCard(), drawCard()];
+            dealerHand = [drawCard(), drawCard()];
             gameState = 'PLAYING';
-
-            // 配布アニメーション風
-            playerHand.push(drawCard());
-            dealerHand.push(drawCard());
-            playerHand.push(drawCard());
-            dealerHand.push(drawCard()); // 2枚目は裏向きだが内部には保持
 
             playSound('deal');
             renderHands(false);
@@ -431,19 +448,15 @@
 
             let pScore = calculateScore(playerHand).score;
             let dScoreShow = calculateScore([dealerHand[0]]).score;
-
             document.getElementById('dealer-score').innerText = dScoreShow + ' + ?';
 
-            // 初手ナチュラルブラックジャックの判定
             if (pScore === 21) {
                 endRound();
                 return;
             }
-
-            document.getElementById('message-box').innerText = 'ヒット（追加）かスタンド（勝負）を選んでください';
+            document.getElementById('message-box').innerText = 'ヒットかスタンドを選んでね (´ω`)';
         }
 
-        // --- スコア計算ロジック (エースは1または11で最適計算) ---
         function calculateScore(hand) {
             let score = 0;
             let aces = 0;
@@ -461,25 +474,19 @@
                 score -= 10;
                 aces--;
             }
-            let isSoft = aces > 0;
-            return { score, isSoft };
+            return { score, isSoft: aces > 0 };
         }
 
-        // --- 描画関数 ---
         function renderHands(revealDealer) {
             let pContainer = document.getElementById('player-cards');
             let dContainer = document.getElementById('dealer-cards');
             pContainer.innerHTML = '';
             dContainer.innerHTML = '';
 
-            // プレイヤーカード描画
-            playerHand.forEach(card => {
-                pContainer.appendChild(createCardElement(card, false));
-            });
+            playerHand.forEach(card => pContainer.appendChild(createCardElement(card, false)));
             let pRes = calculateScore(playerHand);
             document.getElementById('player-score').innerText = pRes.score + (pRes.isSoft ? ' (Soft)' : '');
 
-            // ディーラーカード描画
             dealerHand.forEach((card, index) => {
                 let hidden = (!revealDealer && index === 1);
                 dContainer.appendChild(createCardElement(card, hidden));
@@ -496,22 +503,17 @@
             el.className = 'card';
             if (isHidden) {
                 el.classList.add('hidden');
-                el.innerText = 'MAR';
+                el.innerText = '(´ω`)ﾏｰ';
                 return el;
             }
-
-            if (['♥', '♦'].includes(card.suit)) {
-                el.classList.add('red');
-            }
+            if (['♥', '♦'].includes(card.suit)) el.classList.add('red');
 
             let top = document.createElement('div');
             top.className = 'card-top';
             top.innerText = card.value + card.suit;
-
             let center = document.createElement('div');
             center.className = 'card-center';
             center.innerText = card.suit;
-
             let bottom = document.createElement('div');
             bottom.className = 'card-bottom';
             bottom.innerText = card.value + card.suit;
@@ -522,7 +524,6 @@
             return el;
         }
 
-        // --- プレイヤーの行動: ヒット ---
         function playerHit() {
             if (gameState !== 'PLAYING') return;
             playerHand.push(drawCard());
@@ -531,29 +532,25 @@
 
             let pRes = calculateScore(playerHand);
             if (pRes.score > 21) {
-                // バースト
                 gameState = 'ROUND_OVER';
                 renderHands(true);
                 playSound('lose');
-                document.getElementById('message-box').innerText = 'バースト！あなたの負けです...';
+                document.getElementById('message-box').innerText = 'バースト！負けちゃいました… (ﾉД`)';
                 currentBet = 0;
                 saveBalance();
                 updateDisplay();
             } else if (pRes.score === 21) {
-                // 自動でスタンドに移行
                 playerStand();
             }
         }
 
-        // --- プレイヤーの行動: スタンド ---
         function playerStand() {
             if (gameState !== 'PLAYING') return;
             gameState = 'DEALER_TURN';
             updateDisplay();
-            document.getElementById('message-box').innerText = 'ディーラーのターン...';
+            document.getElementById('message-box').innerText = 'ディーラー（ﾏｰ）のターン…';
             renderHands(true);
 
-            // ディーラーの思考・ヒット処理 (ソフト17ルール: 17以上になるまで必ず引く)
             let dealerInterval = setInterval(() => {
                 let dRes = calculateScore(dealerHand);
                 if (dRes.score < 17) {
@@ -567,19 +564,16 @@
             }, 600);
         }
 
-        // --- 勝敗判定 ---
         function determineWinner() {
             gameState = 'ROUND_OVER';
             let pRes = calculateScore(playerHand);
             let dRes = calculateScore(dealerHand);
-
             let pScore = pRes.score;
             let dScore = dRes.score;
 
             let msg = '';
             let winMultiplier = 0;
 
-            // ブラックジャックの判定 (初手2枚で21)
             let isPlayerBJ = (playerHand.length === 2 && pScore === 21);
             let isDealerBJ = (dealerHand.length === 2 && dScore === 21);
 
@@ -587,19 +581,19 @@
                 msg = '双方ブラックジャック！プッシュ（引き分け）';
                 winMultiplier = 1;
             } else if (isPlayerBJ) {
-                msg = '🎉 ブラックジャック！ 1.5倍配当獲得！';
-                winMultiplier = 2.5; // 元金 + 1.5倍
+                msg = '🎉 ブラックジャック！ 1.5倍配当獲得！(｀・ω・´)';
+                winMultiplier = 2.5;
             } else if (isDealerBJ) {
-                msg = 'ディーラーがブラックジャック！あなたの負けです';
+                msg = 'ディーラーのブラックジャック…負けです (´-ω-`)';
                 winMultiplier = 0;
             } else if (dScore > 21) {
-                msg = '🎉 ディーラーバースト！あなたの勝ちです！';
-                winMultiplier = 2; // 元金 + 1倍
+                msg = '🎉 ディーラーバースト！あなたの勝ち！ (´ω`)✨';
+                winMultiplier = 2;
             } else if (pScore > dScore) {
-                msg = '🎉 あなたの勝ちです！';
+                msg = '🎉 あなたの勝ちです！ (≧▽≦)';
                 winMultiplier = 2;
             } else if (pScore < dScore) {
-                msg = 'ディーラーの勝ちです...';
+                msg = 'ディーラーの勝ちです… (つд⊂)';
                 winMultiplier = 0;
             } else {
                 msg = 'プッシュ（引き分け）';
@@ -609,21 +603,17 @@
             let payout = Math.floor(currentBet * winMultiplier);
             balance += payout;
 
-            if (winMultiplier > 1) {
-                playSound('win');
-            } else if (winMultiplier === 0) {
-                playSound('lose');
-            }
+            if (winMultiplier > 1) playSound('win');
+            else if (winMultiplier === 0) playSound('lose');
 
             document.getElementById('message-box').innerText = msg;
             currentBet = 0;
             saveBalance();
             updateDisplay();
 
-            // 所持金が0になった場合の救済措置
             if (balance <= 0) {
                 setTimeout(() => {
-                    if (confirm("所持金がなくなってしまいました。救済として 1,000 G をチャージしますか？")) {
+                    if (confirm("所持金がなくなりました。救済として 1,000 G チャージしますか？")) {
                         balance = 1000;
                         saveBalance();
                         updateDisplay();
@@ -632,12 +622,23 @@
             }
         }
 
-        // 即座に終了判定（初手BJ用など）
         function endRound() {
             determineWinner();
         }
 
-        // 初期化実行
+        // 次のラウンドへリセット
+        function resetRound() {
+            gameState = 'BETTING';
+            playerHand = [];
+            dealerHand = [];
+            document.getElementById('player-cards').innerHTML = '';
+            document.getElementById('dealer-cards').innerHTML = '';
+            document.getElementById('player-score').innerText = '-';
+            document.getElementById('dealer-score').innerText = '-';
+            document.getElementById('message-box').innerText = 'ベット額を選んで「ディール」を押してください';
+            updateDisplay();
+        }
+
         createDeck();
         updateDisplay();
     </script>
