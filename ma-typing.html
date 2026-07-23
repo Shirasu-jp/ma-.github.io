@@ -168,10 +168,18 @@
             <div class="roma-display" id="roma-display">PRESS SPACE TO START</div>
 
             <!-- スタート・終了画面 -->
-            <div class="overlay" id="start-overlay">
+         <div class="overlay" id="start-overlay">
                 <h2>ﾏｰﾏｰタイピング開幕！</h2>
-                <p>記号やスラングを完全自動判定！<br>制限時間内にフレーズを打ちまくれ！</p>
-                <button class="action-btn" onclick="startGame()">ゲームスタート</button>
+                <p>記号やスラングを完全自動判定！<br>制限時間を選んでフレーズを打ちまくれ！</p>
+                
+                <!-- 👇 追加：時間選択ボタン群 -->
+                <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+                    <button class="time-btn" onclick="setGameTime(30, this)" style="background: #e94560; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">30秒</button>
+                    <button class="time-btn" onclick="setGameTime(60, this)" style="background: #16213e; color:white; border:1px solid #00f0ff; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">60秒</button>
+                    <button class="time-btn" onclick="setGameTime(90, this)" style="background: #16213e; color:white; border:1px solid #00f0ff; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">90秒</button>
+                </div>
+
+                <button class="action-bg action-btn" onclick="startGame()">ゲームスタート</button>
             </div>
 
             <div class="overlay" id="result-overlay" style="display: none;">
@@ -331,6 +339,7 @@
         }
 
         // --- ゲーム制御変数 ---
+        let selectedTime = 30; // 選択された制限時間を保持
         let timer = 30;
         let score = 0;
         let combo = 0;
@@ -342,10 +351,26 @@
         let currentRoma = "";
         let typedIndex = 0;
 
+        // 時間選択ボタンが押されたときの処理
+        function setGameTime(seconds, btnElement) {
+            selectedTime = seconds;
+            timer = seconds;
+            document.getElementById('time-display').innerText = timer;
+            
+            // ボタンの見た目（アクティブ状態）を切り替え
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.style.background = '#16213e';
+                btn.style.border = '1px solid #00f0ff';
+            });
+            btnElement.style.background = '#e94560';
+            btnElement.style.border = 'none';
+        }
+
         function startGame() {
             document.getElementById('start-overlay').style.display = 'none';
             document.getElementById('result-overlay').style.display = 'none';
-            timer = 30;
+            
+            timer = selectedTime; // 選ばれた時間をセット
             score = 0;
             combo = 0;
             isPlaying = true;
