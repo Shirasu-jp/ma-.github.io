@@ -43,7 +43,7 @@
         }
         .game-container {
             width: 100%;
-            max-width: 700px;
+            max-width: 750px;
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -78,17 +78,18 @@
             position: relative;
         }
         .kanji-text {
-            font-size: 32px;
+            font-size: 30px;
             font-weight: bold;
             color: #fff;
-            margin-bottom: 10px;
-            min-height: 45px;
+            margin-bottom: 8px;
+            min-height: 40px;
         }
         .roma-display {
-            font-size: 24px;
+            font-size: 22px;
             font-family: monospace;
             letter-spacing: 2px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
+            word-break: break-all;
         }
         .typed {
             color: #00f0ff;
@@ -98,7 +99,7 @@
             color: #666;
         }
         .char-img {
-            font-size: 50px;
+            font-size: 45px;
             margin-bottom: 15px;
         }
         /* スタート・リザルト画面オーバーレイ */
@@ -108,7 +109,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(15,15,26,0.92);
+            background: rgba(15,15,26,0.95);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -147,7 +148,7 @@
 <body>
 
     <header>
-        <a href="index.html" class="back-btn">⬅ ポータルへ戻る</a>
+        <a href="ma-jack" class="back-btn">⬅ ポータルへ戻る</a>
         <div style="font-weight: bold; color: #00f0ff;">⌨ ﾏｰﾏｰタイピング</div>
     </header>
 
@@ -156,7 +157,7 @@
         <div class="scoreboard">
             <div class="score-item">⏱️ 残り時間: <span id="time-display">30</span>秒</div>
             <div class="score-item">💰 獲得ポイント: <span id="score-display">0</span> pt</div>
-            <div class="score-item">✨ 콤ボ: <span id="combo-display">0</span></div>
+            <div class="score-item">✨ コンボ: <span id="combo-display">0</span></div>
         </div>
 
         <!-- メインタイピング盤面 -->
@@ -168,7 +169,7 @@
             <!-- スタート・終了画面 -->
             <div class="overlay" id="start-overlay">
                 <h2>ﾏｰﾏｰタイピング開幕！</h2>
-                <p>制限時間内に文字を打ちまくって高得点を目指せ！<br>どんな入力方式でもスムーズに判定されるぞ。</p>
+                <p>あらゆるローマ字入力（cho/tyo/cyo等）を完全自動で判定！<br>制限時間内にフリレーズを打ちまくれ！</p>
                 <button class="action-btn" onclick="startGame()">ゲームスタート</button>
             </div>
 
@@ -182,67 +183,117 @@
 
     <script>
         // ========================================================
-        // 🧩【カスタム用ブロック】ここに好きな単語・問題を追加できます！
-        // 引数: { text: "画面に表示する漢字や言葉", roma: ["第一候補のローマ字", "別解ローマ字(任意)"] }
+        // 🧩【カスタム用ブロック】ここに「ひらがな」ベースでフレーズを追加するだけ！
+        // ローマ字は自動であらゆる入力形式（tyo/cho/cyo、nn/n等）に全対応します。
         // ========================================================
         const WORD_DATABASE = [
-    {
-        text: "うおw",
-        roma: ["uow", "uohw", "uwo"]
-    },
-    {
-        text: "どわー笑",
-        roma: ["dowarewarau", "dowa-warau", "dowawa", "dowa-s", "dowarw"]
-    },
-    {
-        text: "ったく…w",
-        roma: ["ttaku...w", "ttaku...u", "ttakuw", "ttaku...", "ttakuw"]
-    },
-    {
-        text: "かっこよw",
-        roma: ["kakkoyow", "kakkoyo-w", "kakuyow", "kakkoyou"]
-    },
-    {
-        text: "えぐー！笑",
-        roma: ["egu-!warau", "eg-!s", "eguwarau", "eguseyo", "egu!w"]
-    },
-    {
-        text: "冗談ですやん！！w",
-        roma: ["joudandesuyann!!w", "jyoudandesujann!!w", "jyoudandesuyariw", "joudandesuyandesu"]
-    },
-    {
-        text: "きちーww",
-        roma: ["kichiiww", "kichiiwww", "kichiw", "kichiiw"]
-    },
-    {
-        text: "おもろいなあ！ww",
-        roma: ["omoroinaa!ww", "omoroinaaww", "omoroinaaa!ww", "omoroinaasumile"]
-    },
-    {
-        text: "ど、どした？笑",
-        roma: ["do,doshita?warau", "do,doshita?s", "dodoshita?w", "do,doshitaw"]
-    },
-    {
-        text: "ちょw1回落ち着けw落ち着けw",
-        roma: ["chow1kaiochitsukewochitsukew", "chowikkaiochitsukewochitsukew", "chow1kaiochitsukeochitsuke"]
-    },
-    {
-        text: "ええてw",
-        roma: ["eetew", "eetewarau", "eete-w", "eeteww"]
-    },
-    {
-        text: "ちょwお前必死やんww",
-        roma: ["chowomaehisshiyannww", "chowomaehisshiyainww", "chowomaehisshiyannwww"]
-    },
-    {
-        text: "すごいなあキミww",
-        roma: ["sugoinaakimiww", "sugoinaakimiwww", "sugoinaakimiw"]
-    },
-    {
-        text: "ちょw怒んなやw",
-        roma: ["chowokonnayaw", "chowokonnayawarau", "chowokonnayasw"]
-    }
+            { text: "うおw", hira: "うおw" },
+            { text: "どわー笑", hira: "どわーわらう" },
+            { text: "ったく…w", hira: "ったく...w" },
+            { text: "かっこよw", hira: "かっこよw" },
+            { text: "えぐー！笑", hira: "えぐー！わらう" },
+            { text: "冗談ですやん！！w", hira: "じょうだんですやん！！w" },
+            { text: "きちーww", hira: "きちーww" },
+            { text: "おもろいなあ！ww", hira: "おもろいなあ！ww" },
+            { text: "ど、どした？笑", hira: "ど、どした？わらう" },
+            { text: "ちょw1回落ち着けw落ち着けw", hira: "ちょw1かいおちつけwおちつけw" },
+            { text: "ええてw", hira: "ええてw" },
+            { text: "ちょwお前必死やんww", hira: "ちょwおまえひっしやんww" },
+            { text: "すごいなあキミww", hira: "すごいなあきみww" },
+            { text: "ちょw怒んなやw", hira: "ちょwおこんなやw" }
         ];
+
+        // --- ローマ字自動生成・全パターン展開エンジン（寿司打方式） ---
+        const KANA_TABLE = {
+            'あ': ['a'], 'い': ['i', 'yi'], 'う': ['u', 'wu', 'whu'], 'え': ['e'], 'お': ['o'],
+            'か': ['ka', 'ca'], 'き': ['ki'], 'く': ['ku', 'cu', 'qu'], 'け': ['ke'], 'こ': ['ko', 'co'],
+            'さ': ['sa'], 'し': ['shi', 'si', 'ci'], 'す': ['su'], 'せ': ['se', 'ce'], 'そ': ['so'],
+            'た': ['ta'], 'ち': ['chi', 'ti'], 'つ': ['tsu', 'tu'], 'て': ['te'], 'と': ['to'],
+            'な': ['na'], 'に': ['ni'], 'ぬ': ['nu'], 'ね': ['ne'], 'の': ['no'],
+            'は': ['ha'], 'ひ': ['hi'], 'ふ': ['hu', 'fu'], 'へ': ['he'], 'ほ': ['ho'],
+            'ま': ['ma'], 'み': ['mi'], 'む': ['mu'], 'め': ['me'], 'も': ['mo'],
+            'や': ['ya'], 'ゆ': ['yu'], 'よ': ['yo'],
+            'ら': ['ra'], 'り': ['ri'], 'る': ['ru'], 'れ': ['re'], 'ろ': ['ro'],
+            'わ': ['wa'], 'を': ['wo'], 'ん': ['nn', 'n\'', 'n'],
+            'が': ['ga'], 'ぎ': ['gi'], 'ぐ': ['gu'], 'げ': ['ge'], 'ご': ['go'],
+            'ざ': ['za'], 'じ': ['ji', 'zi'], 'ず': ['zu'], 'ぜ': ['ze'], 'ぞ': ['zo'],
+            'だ': ['da'], 'ぢ': ['di'], 'づ': ['du'], 'で': ['de'], 'ど': ['do'],
+            'ば': ['ba'], 'び': ['bi'], 'ぶ': ['bu'], 'べ': ['be'], 'ぼ': ['bo'],
+            'ぱ': ['pa'], 'ぴ': ['pi'], 'ぷ': ['pu'], 'ぺ': ['pe'], 'ぽ': ['po'],
+            'きゃ': ['kya', 'kilya'], 'きゅ': ['kyu', 'kilyu'], 'きょ': ['kyo', 'kilyo'],
+            'しゃ': ['sha', 'sya', 'silya'], 'しゅ': ['shu', 'syu', 'silya'], 'しょ': ['sho', 'syo', 'silyo'],
+            'ちゃ': ['cha', 'tya', 'cya'], 'ちゅ': ['chu', 'tyu', 'cyu'], 'ちょ': ['cho', 'tyo', 'cyo'],
+            'にゃ': ['nya'], 'にゅ': ['nyu'], 'にょ': ['nyo'],
+            'ひゃ': ['hya'], 'ひゅ': ['hyu'], 'ひょ': ['hyo'],
+            'みゃ': ['mya'], 'みゅ': ['myu'], 'みょ': ['myo'],
+            'りゃ': ['rya'], 'りゅ': ['ryu'], 'りょ': ['ryo'],
+            'ぎゃ': ['gya'], 'ぎゅ': ['gyu'], 'ぎょ': ['gyo'],
+            'じゃ': ['ja', 'zya', 'jya'], 'じゅ': ['ju', 'zyu', 'jyu'], 'じょ': ['jo', 'zyo', 'jyo'],
+            'びゃ': ['bya'], 'びゅ': ['byu'], 'びょ': ['byo'],
+            'ぴゃ': ['pya'], 'ぴゅ': ['pyu'], 'ぴょ': ['pyo'],
+            'っ': ['xtu', 'xtsu', 'ltu', 'ltsu'],
+            'ぁ': ['xa', 'la'], 'ぃ': ['xi', 'li', 'xlyi'], 'ぅ': ['xu', 'lu'], 'ぇ': ['xe', 'le', 'xlye'], 'ぉ': ['xo', 'lo'],
+            'ゃ': ['xya', 'lya'], 'ゅ': ['xyu', 'lyu'], 'ょ': ['xyo', 'lyo'], 'ー': ['-']
+        };
+
+        // ひらがな文字列から、考えられるすべてのローマ字の組み合わせ（ツリー）を生成する関数
+        function generateRomaVariants(hiraStr) {
+            let currentPaths = [""];
+
+            let i = 0;
+            while (i < hiraStr.length) {
+                // 2文字の音（きゃ、っち、等）を優先チェック
+                let sub2 = hiraStr.substr(i, 2);
+                let sub1 = hiraStr.substr(i, 1);
+                
+                // 促音（っ+子音）の特殊処理
+                if (sub1 === 'っ' && i + 1 < hiraStr.length) {
+                    let nextChar = hiraStr.substr(i + 1, 1);
+                    let nextTrans = KANA_TABLE[nextChar] || [nextChar];
+                    let newPaths = [];
+                    currentPaths.forEach(path => {
+                        nextTrans.forEach(nt => {
+                            let firstLetter = nt[0];
+                            // 促音の表現 (xtu, tsu, または子音重ね)
+                            let tsuOpts = ['xtu', 'xtsu', 'ltu', 'ltsu', firstLetter];
+                            tsuOpts.forEach(to => {
+                                newPaths.push(path + to);
+                            });
+                        });
+                    });
+                    currentPaths = newPaths;
+                    i++;
+                    continue;
+                }
+
+                let matchKey = null;
+                let matchTrans = null;
+
+                if (i + 1 < hiraStr.length && KANA_TABLE[sub2]) {
+                    matchKey = sub2;
+                    matchTrans = KANA_TABLE[sub2];
+                    i += 2;
+                } else if (KANA_TABLE[sub1]) {
+                    matchKey = sub1;
+                    matchTrans = KANA_TABLE[sub1];
+                    i += 1;
+                } else {
+                    // 記号や数字（w, ?, !, 1 など）
+                    matchKey = sub1;
+                    matchTrans = [sub1];
+                    i += 1;
+                }
+
+                let newPaths = [];
+                currentPaths.forEach(path => {
+                    matchTrans.forEach(tr => {
+                        newPaths.push(path + tr);
+                    });
+                });
+                currentPaths = newPaths;
+            }
+            return currentPaths;
+        }
 
         // --- Web Audio API (SE生成) ---
         let audioCtx = null;
@@ -271,7 +322,8 @@
         let gameInterval = null;
         
         let currentWord = {};
-        let currentRoma = "";
+        let activeRomaList = []; // 現在の単語の全ローマ字バリエーション
+        let currentRoma = "";    // ユーザーが選択・一致している現在のターゲット文字列
         let typedIndex = 0;
 
         function startGame() {
@@ -309,63 +361,67 @@
             document.getElementById('combo-display').innerText = combo;
         }
 
-        // ランダムな単語をチョイス
+        // ランダムな単語をチョイスしてローマ字を全展開
         function nextWord() {
             let randomIndex = Math.floor(Math.random() * WORD_DATABASE.length);
             currentWord = WORD_DATABASE[randomIndex];
+            
+            // 自動で全ローマ字パターンを生成
+            activeRomaList = generateRomaVariants(currentWord.hira);
             typedIndex = 0;
-            // 最初のローマ字候補を初期ターゲットに設定
-            currentRoma = currentWord.roma[0];
+            currentRoma = activeRomaList[0]; // 初期表示用
             renderWord();
         }
 
         function renderWord() {
             document.getElementById('kanji-display').innerText = currentWord.text;
             
+            // 現在の進捗に一致する候補の中で、一番見やすいものを表示用に採択
             let typedPart = currentRoma.substring(0, typedIndex);
             let untypedPart = currentRoma.substring(typedIndex);
             
             document.getElementById('roma-display').innerHTML = 
                 `<span class="typed">${typedPart}</span><span class="untyped">${untypedPart}</span>`;
             
-            // ランダムにﾏｰの顔が変わる演出
+            // 表情変化演出
             const faces = ["(´ω`)", "( ˘ω˘ )", "(ﾉД`)", "(ﾟ∀ﾟ)", "(；ω；)"];
             document.getElementById('char-img').innerText = faces[Math.floor(Math.random() * faces.length)];
         }
 
-        // --- キー入力判定 (どんな入力方式でも柔軟に受け付ける寿司打方式) ---
+        // --- キー入力判定（寿司打完全対応・どんなローマ字でも自動救済） ---
         window.addEventListener('keydown', (e) => {
             if (!isPlaying) return;
-            // ファンクションキーや特殊キーは無視
             if (e.key.length > 1) return;
 
             let inputChar = e.key.toLowerCase();
-            
-            // 現在の入力位置に合致するかチェック（複数ローマ字パターンの救済）
             let matched = false;
-            let activeRoma = currentRoma;
+            let nextValidRoma = "";
 
-            // ユーザーが打った文字が、登録されているどのローマ字パターンの続きに一致するか確認
-            for (let romaPattern of currentWord.roma) {
-                if (romaPattern.startsWith(activeRoma.substring(0, typedIndex) + inputChar)) {
-                    // もし別パターンのほうが進みが良い、あるいは一致するならそこに切り替え可能
-                    currentRoma = romaPattern;
-                    matched = true;
-                    break;
+            // ユーザーの入力が、生成された全ローマ字パターンのどれかの「次の文字」に一致するか走査する
+            let validCandidates = [];
+            for (let roma of activeRomaList) {
+                let currentTyped = currentRoma.substring(0, typedIndex);
+                if (roma.startsWith(currentTyped + inputChar)) {
+                    validCandidates.push(roma);
+                    if (roma[typedIndex] === inputChar) {
+                        matched = true;
+                        nextValidRoma = roma;
+                    }
                 }
             }
 
-            if (matched && currentRoma[typedIndex] === inputChar) {
-                // 正解
+            if (matched) {
+                // 正解：入力に合致するルートへスムーズに同期・移行
+                currentRoma = nextValidRoma;
                 typedIndex++;
                 combo++;
-                score += 100 * Math.min(combo, 10); // コンボボーナス
+                score += 100 * Math.min(combo, 10);
                 playTypingSe(true);
                 renderWord();
 
                 // 単語クリア判定
                 if (typedIndex >= currentRoma.length) {
-                    score += 500; // 単語クリアボーナス
+                    score += 500;
                     setTimeout(nextWord, 100);
                 }
             } else {
