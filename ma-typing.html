@@ -148,7 +148,8 @@
 <body>
 
     <header>
-        <a href="ma-jack" class="back-btn">⬅ ポータルへ戻る</a>
+        <!-- 修正：ポータルのTOPへ正しく飛ぶように変更 -->
+        <a href="index.html" class="back-btn">⬅ ポータルへ戻る</a>
         <div style="font-weight: bold; color: #00f0ff;">⌨ ﾏｰﾏｰタイピング</div>
     </header>
 
@@ -169,7 +170,7 @@
             <!-- スタート・終了画面 -->
             <div class="overlay" id="start-overlay">
                 <h2>ﾏｰﾏｰタイピング開幕！</h2>
-                <p>記号や数字も含めて完全自動判定！<br>制限時間内にフレーズを打ちまくれ！</p>
+                <p>記号やスラングを完全自動判定！<br>制限時間内にフレーズを打ちまくれ！</p>
                 <button class="action-btn" onclick="startGame()">ゲームスタート</button>
             </div>
 
@@ -188,13 +189,13 @@
         const WORD_DATABASE = [
             { text: "うおw", hira: "うおw" },
             { text: "どわー笑", hira: "どわーわらう" },
-            { text: "ったく…w", hira: "ったく…w" },
+            { text: "ったく…w", hira: "ったく...w" },
             { text: "かっこよw", hira: "かっこよw" },
-            { text: "えぐー！笑", hira: "えぐー！わらう" },
-            { text: "冗談ですやん！！w", hira: "じょうだんですやん！！w" },
+            { text: "えぐー！笑", hira: "えぐー!わらう" },
+            { text: "冗談ですやん！！w", hira: "じょうだんですやん!!w" },
             { text: "きちーww", hira: "きちーww" },
-            { text: "おもろいなあ！ww", hira: "おもろいなあ！ww" },
-            { text: "ど、どした？笑", hira: "ど、どした？わらう" },
+            { text: "おもろいなあ！ww", hira: "おもろいなあ!ww" },
+            { text: "ど、どした？笑", hira: "ど,どした?わらう" },
             { text: "ちょw1回落ち着けw落ち着けw", hira: "ちょw1かいおちつけwおちつけw" },
             { text: "ええてw", hira: "ええてw" },
             { text: "ちょwお前必死やんww", hira: "ちょwおまえひっしやんww" },
@@ -202,7 +203,7 @@
             { text: "ちょw怒んなやw", hira: "ちょwおこんなやw" }
         ];
 
-        // --- ローマ字自動生成エンジン（記号・数字・全角半角の揺れ完全対応） ---
+        // --- ローマ字自動生成エンジン（記号安全処理版） ---
         const KANA_TABLE = {
             'あ': ['a'], 'い': ['i', 'yi'], 'う': ['u', 'wu', 'whu'], 'え': ['e'], 'お': ['o'],
             'か': ['ka', 'ca'], 'き': ['ki'], 'く': ['ku', 'cu', 'qu'], 'け': ['ke'], 'こ': ['ko', 'co'],
@@ -233,35 +234,35 @@
             'っ': ['xtu', 'xtsu', 'ltu', 'ltsu'],
             'ぁ': ['xa', 'la'], 'ぃ': ['xi', 'li', 'xlyi'], 'ぅ': ['xu', 'lu'], 'ぇ': ['xe', 'le', 'xlye'], 'ぉ': ['xo', 'lo'],
             'ゃ': ['xya', 'lya'], 'ゅ': ['xyu', 'lyu'], 'ょ': ['xyo', 'lyo'], 'ー': ['-', '^'],
-            // --- 記号・数字の全角半角救済マッピング ---
-            '！': ['!'], '!': ['!'],
-            '？': ['?'], '?': ['?'],
-            '，': [','], ',': [','],
-            '、': [','], '。': ['.'],
-            '…': ['...', '...'], '.': ['.'],
-            'ｗ': ['w'], 'w': ['w'],
-            '１': ['1'], '1': ['1'],
-            '２': ['2'], '2': ['2'],
-            '３': ['3'], '3': ['3'],
-            '４': ['4'], '4': ['4'],
-            '５': ['5'], '5': ['5'],
-            '６': ['6'], '6': ['6'],
-            '７': ['7'], '7': ['7'],
-            '８': ['8'], '8': ['8'],
-            '９': ['9'], '9': ['9'],
-            '０': ['0'], '0': ['0']
+            // 記号類
+            '!': ['!'], '！': ['!'],
+            '?': ['?'], '？': ['?'],
+            ',': [','], '，': [','],
+            '.': ['.'], '．': ['.'],
+            'w': ['w'], 'ｗ': ['w'],
+            '1': ['1'], '１': ['1'],
+            '2': ['2'], '２': ['2'],
+            '3': ['3'], '３': ['3'],
+            '4': ['4'], '４': ['4'],
+            '5': ['5'], '５': ['5'],
+            '6': ['6'], '６': ['6'],
+            '7': ['7'], '７': ['7'],
+            '8': ['8'], '８': ['8'],
+            '9': ['9'], '９': ['9'],
+            '0': ['0'], '０': ['0']
         };
 
-        // ローマ字自動生成ツリー
+        // ローマ字自動生成関数（安全ループ版）
         function generateRomaVariants(hiraStr) {
             let currentPaths = [""];
             let i = 0;
             while (i < hiraStr.length) {
-                let sub3 = hiraStr.substr(i, 3); // 「…」などのため3文字分も考慮
+                // 3文字、2文字、1文字の順にマッチを試みる
+                let sub3 = hiraStr.substr(i, 3);
                 let sub2 = hiraStr.substr(i, 2);
                 let sub1 = hiraStr.substr(i, 1);
                 
-                // 促音（っ+子音）
+                // 促音（っ+子音）の特殊処理
                 if (sub1 === 'っ' && i + 1 < hiraStr.length) {
                     let nextChar = hiraStr.substr(i + 1, 1);
                     let nextTrans = KANA_TABLE[nextChar] || [nextChar];
@@ -280,25 +281,22 @@
                     continue;
                 }
 
-                let matchKey = null;
                 let matchTrans = null;
+                let consumedLength = 1;
 
                 if (i + 2 < hiraStr.length && KANA_TABLE[sub3]) {
-                    matchKey = sub3;
                     matchTrans = KANA_TABLE[sub3];
-                    i += 3;
+                    consumedLength = 3;
                 } else if (i + 1 < hiraStr.length && KANA_TABLE[sub2]) {
-                    matchKey = sub2;
                     matchTrans = KANA_TABLE[sub2];
-                    i += 2;
+                    consumedLength = 2;
                 } else if (KANA_TABLE[sub1]) {
-                    matchKey = sub1;
                     matchTrans = KANA_TABLE[sub1];
-                    i += 1;
+                    consumedLength = 1;
                 } else {
-                    matchKey = sub1;
+                    // 未登録の文字や記号はそのまま通す
                     matchTrans = [sub1];
-                    i += 1;
+                    consumedLength = 1;
                 }
 
                 let newPaths = [];
@@ -308,6 +306,7 @@
                     });
                 });
                 currentPaths = newPaths;
+                i += consumedLength;
             }
             return currentPaths;
         }
@@ -384,7 +383,7 @@
             
             activeRomaList = generateRomaVariants(currentWord.hira);
             typedIndex = 0;
-            currentRoma = activeRomaList[0];
+            currentRoma = activeRomaList[0] || "";
             renderWord();
         }
 
@@ -410,11 +409,9 @@
             let matched = false;
             let nextValidRoma = "";
 
-            let validCandidates = [];
             for (let roma of activeRomaList) {
                 let currentTyped = currentRoma.substring(0, typedIndex);
                 if (roma.startsWith(currentTyped + inputChar)) {
-                    validCandidates.push(roma);
                     if (roma[typedIndex] === inputChar) {
                         matched = true;
                         nextValidRoma = roma;
